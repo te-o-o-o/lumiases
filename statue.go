@@ -15,21 +15,23 @@ import (
 // runs a band of light across, rise turns the top of the head into smoke,
 // look turns the head left and right (radians), spin turns it all the way
 // round (radians a second), blast > 0 makes it burst once in place.
+// Rendered heads only: nod (degrees) nods it, frown and smile blend in
+// those expressions when the model has them.
 // angle (where the spin has got to) and the blast's progress are kept by
 // main, not eased like the rest.
 type statueParams struct {
-	roll, glitch, ripple, sweep, rise, look, spin, angle, blast float64
+	roll, glitch, ripple, sweep, rise, look, spin, angle, blast, nod, frown, smile float64
 }
 
 var stateStatue = map[string]statueParams{
 	"idle":     {look: 0.3},
-	"thinking": {roll: 0.08, rise: 1},
+	"thinking": {roll: 0.08, rise: 1, frown: 0.6},
 	"reading":  {sweep: 1, look: 0.55},
 	"editing":  {glitch: 0.4},
 	"running":  {ripple: 1},
-	"waiting":  {},
-	"error":    {glitch: 1},
-	"done":     {sweep: 0.8, blast: 1},
+	"waiting":  {nod: 8},
+	"error":    {glitch: 1, frown: 1},
+	"done":     {sweep: 0.8, blast: 1, smile: 1},
 }
 
 func (a statueParams) ease(b statueParams, k float64) statueParams {
@@ -37,28 +39,63 @@ func (a statueParams) ease(b statueParams, k float64) statueParams {
 		roll: lerp(a.roll, b.roll, k), glitch: lerp(a.glitch, b.glitch, k), ripple: lerp(a.ripple, b.ripple, k),
 		sweep: lerp(a.sweep, b.sweep, k), rise: lerp(a.rise, b.rise, k), look: lerp(a.look, b.look, k),
 		spin: lerp(a.spin, b.spin, k), angle: a.angle, blast: a.blast,
+		nod: lerp(a.nod, b.nod, k), frown: lerp(a.frown, b.frown, k), smile: lerp(a.smile, b.smile, k),
 	}
 }
 
-// faceImg is a statue photo the matter flows over (statue mode, -face).
+// faceImg is one picture of a statue the matter flows over. Luminance and
+// mask are kept as bytes: a rendered head holds a hundred of them.
 type faceImg struct {
 	w, h      int
-	lum, mask []float64
+	lum, mask []uint8
 	// axis and half are, per row, the middle and half-width of the statue as
 	// fractions of the picture's width: the bust turns as a stack of
 	// cylinders, one per row, so the neck stays narrow and the hair wide.
 	axis, half []float64
 }
 
+// head is what statue mode draws: a photo, turned by wrapping it on
+// cylinders, or frames rendered from a 3D model, turned by picking them.
+type head struct {
+	photo  *faceImg
+	frames *frameHead
+}
+
 // face is the head being drawn, nil for the orb; main switches it between
 // frames.
-var face *faceImg
+var face *head
+
+// at reads luminance and mask at u, v for a pose; a photo has only one.
+func (h *head) at(u, v, yaw float64, st statueParams, t float64) (float64, float64) {
+	if h.frames != nil {
+		return h.frames.at(u, v, yaw, st.nod*math.Sin(t*2.2), st.frown, st.smile)
+	}
+	return h.photo.at(u, v)
+}
+
+func (h *head) rows() int {
+	if h.frames != nil {
+		return h.frames.h
+	}
+	return h.photo.h
+}
+
+func (h *head) aspect() float64 {
+	if h.frames != nil {
+		return float64(h.frames.w) / float64(h.frames.h)
+	}
+	return float64(h.photo.w) / float64(h.photo.h)
+}
 
 // loadFace reads a photo, keeps the crop box (fractions of the picture),
 // shrinks it to at most 360 px and tells the statue from its background:
 // by transparency when the picture has some (a cut-out PNG), else by a
 // colour key that only knows warm stone against greenery (red above green).
-func loadFace(path string, crop [4]float64) (*faceImg, error) {
+// The statue's tones are stretched to the full range: over its own range
+// when tone is nil (a photo), else over *tone, computed into it when still
+// zero, so every frame of a rendered head shares the front frame's
+// exposure instead of flickering from one angle to the next.
+func loadFace(path string, crop [4]float64, tone *[2]float64) (*faceImg, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -78,7 +115,7 @@ func loadFace(path string, crop [4]float64) (*faceImg, error) {
 	cutOut := ok && !opaque.Opaque()
 	step := max(1, max(x1-x0, y1-y0)/360)
 	fi := &faceImg{w: (x1 - x0) / step, h: (y1 - y0) / step}
-	fi.lum, fi.mask = make([]float64, fi.w*fi.h), make([]float64, fi.w*fi.h)
+	lum, mask := make([]float64, fi.w*fi.h), make([]float64, fi.w*fi.h)
 	var stone []float64
 	for j := 0; j < fi.h; j++ {
 		for i := 0; i < fi.w; i++ {
@@ -91,36 +128,47 @@ func loadFace(path string, crop [4]float64) (*faceImg, error) {
 			}
 			k := j*fi.w + i
 			if cutOut {
-				fi.mask[k] = al / (float64(step*step) * 65535)
+				mask[k] = al / (float64(step*step) * 65535)
 				if al > 0 { // RGBA() is premultiplied: divide the alpha back out
 					r, g, bl = r/al, g/al, bl/al
 				}
 			} else {
 				n := float64(step*step) * 65535
 				r, g, bl = r/n, g/n, bl/n
-				fi.mask[k] = smoothstep(0.04, 0.12, r-g)
+				mask[k] = smoothstep(0.04, 0.12, r-g)
 			}
-			fi.lum[k] = 0.299*r + 0.587*g + 0.114*bl
-			if fi.mask[k] > 0.5 {
-				stone = append(stone, fi.lum[k])
+			lum[k] = 0.299*r + 0.587*g + 0.114*bl
+			if mask[k] > 0.5 {
+				stone = append(stone, lum[k])
 			}
 		}
 	}
 	if len(stone) < 100 {
 		return nil, fmt.Errorf("%s: no statue found (give a PNG with the background removed, or warm stone on a green background)", path)
 	}
-	// Stretch the stone's own range to 0..1, ignoring the 2% extremes.
-	sort.Float64s(stone)
-	lo, hi := stone[len(stone)/50], stone[len(stone)*49/50]
-	for k, l := range fi.lum {
-		fi.lum[k] = math.Max(0, math.Min(1, (l-lo)/(hi-lo+1e-9)))
+	// The range ignores the 2% extremes.
+	if tone == nil || tone[1] == 0 {
+		sort.Float64s(stone)
+		lo, hi := stone[len(stone)/50], stone[len(stone)*49/50]
+		if hi-lo < 0.1 { // a flat picture has no range to stretch: keep its tones
+			lo, hi = 0, 1
+		}
+		if tone == nil {
+			tone = &[2]float64{}
+		}
+		tone[0], tone[1] = lo, hi
+	}
+	for k, l := range lum {
+		lum[k] = math.Max(0, math.Min(1, (l-tone[0])/(tone[1]-tone[0]+1e-9)))
 	}
 	// Unsharp mask: a terminal has few cells for a face, so the features
 	// (eyes, nose, lips) need their local contrast pushed or they melt away.
-	blur := boxBlur(fi.lum, fi.w, fi.h, 7)
-	for k, l := range fi.lum {
+	blur := boxBlur(lum, fi.w, fi.h, 7)
+	fi.lum, fi.mask = make([]uint8, len(lum)), make([]uint8, len(lum))
+	for k, l := range lum {
 		l = math.Max(0, math.Min(1, l+2.2*(l-blur[k])))
-		fi.lum[k] = l * l * (3 - 2*l) // S-curve: sockets and nostrils go dark
+		fi.lum[k] = uint8(255 * l * l * (3 - 2*l)) // S-curve: sockets and nostrils go dark
+		fi.mask[k] = uint8(255 * mask[k])
 	}
 	// Measure each row's width, smoothed over a few rows so a stray speck
 	// of warm background doesn't make one cylinder jut out.
@@ -128,7 +176,7 @@ func loadFace(path string, crop [4]float64) (*faceImg, error) {
 	for j := 0; j < fi.h; j++ {
 		lo, hi := -1, -1
 		for i := 0; i < fi.w; i++ {
-			if fi.mask[j*fi.w+i] > 0.5 {
+			if mask[j*fi.w+i] > 0.5 {
 				if lo < 0 {
 					lo = i
 				}
@@ -174,9 +222,9 @@ func (f *faceImg) at(u, v float64) (float64, float64) {
 	}
 	i, j := int(x), int(y)
 	fx, fy := x-float64(i), y-float64(j)
-	read := func(s []float64) float64 {
+	read := func(s []uint8) float64 {
 		k := j*f.w + i
-		return lerp(lerp(s[k], s[k+1], fx), lerp(s[k+f.w], s[k+f.w+1], fx), fy)
+		return lerp(lerp(float64(s[k]), float64(s[k+1]), fx), lerp(float64(s[k+f.w]), float64(s[k+f.w+1]), fx), fy) / 255
 	}
 	return read(f.lum), read(f.mask)
 }
@@ -187,6 +235,9 @@ func (f *faceImg) at(u, v float64) (float64, float64) {
 func burst(t float64, st statueParams) float64 {
 	yaw := st.look*math.Sin(t*0.35) + st.angle
 	turn := math.Pow(smoothstep(0.7, 0.98, math.Abs(math.Sin(yaw))), 1.5)
+	if face != nil && face.frames != nil {
+		turn = 0 // rendered heads have their true profile to show
+	}
 	return math.Max(turn, 4*st.blast*(1-st.blast))
 }
 
@@ -194,7 +245,7 @@ func burst(t float64, st statueParams) float64 {
 // matter churns over them in the state's colours.
 func sampleFace(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	const H = 2.6 // picture height in orb units; the view spans about ±1.5, the rest is room to sway
-	a := float64(face.w) / float64(face.h)
+	a := face.aspect()
 	sx, sy := x, y // screen position, for effects that stay put (light bands)
 	st := p.statue
 
@@ -243,10 +294,12 @@ func sampleFace(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	// at ±90° meet column for column: past a quarter turn the far side comes
 	// round as the face again, like a Janus bust, since no photo shows the
 	// back of the head. Mirrored or not, the column read is R·sin(θ).
+	// Rendered heads skip this: their frames are the turned head.
 	shade, yaw := 1.0, st.look*math.Sin(t*0.35)+st.angle // the same yaw as burst
-	if j := int((y/H + 0.5) * float64(face.h-1)); j >= 0 && j < face.h && face.half[j] > 0 {
+	pic := face.photo
+	if j := int((y/H + 0.5) * float64(face.rows()-1)); pic != nil && j >= 0 && j < pic.h && pic.half[j] > 0 {
 		W := H * a
-		X, R := (face.axis[j]-0.5)*W, face.half[j]*W*1.05
+		X, R := (pic.axis[j]-0.5)*W, pic.half[j]*W*1.05
 		if math.Abs(x-X) >= R {
 			return p.edge, 0, 2
 		}
@@ -264,7 +317,7 @@ func sampleFace(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	qx, qy := fbm(x*2+ph*0.3, y*2), fbm(x*2-5.2, y*2+ph*0.25)
 	u := (x+p.warp*0.1*(qx-0.5))/(H*a) + 0.5
 	v := (y+p.warp*0.1*(qy-0.5))/H + 0.5
-	l, m := face.at(u, v)
+	l, m := face.at(u, v, yaw, st, t)
 	l *= shade
 	// Sweep: a diagonal band of light crossing the face, then a pause.
 	if st.sweep > 0 {

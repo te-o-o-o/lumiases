@@ -37,7 +37,7 @@ func TestLoadFaceKeysWarmStoneOnGreen(t *testing.T) {
 		}
 		return green
 	})
-	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,10 +51,10 @@ func TestLoadFaceKeysWarmStoneOnGreen(t *testing.T) {
 
 func TestLoadFaceRefusesAPictureWithoutStatue(t *testing.T) {
 	path := writePNG(t, 64, 64, func(x, y int) color.Color { return color.RGBA{60, 140, 50, 255} })
-	if _, err := loadFace(path, [4]float64{0, 0, 1, 1}); err == nil {
+	if _, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil); err == nil {
 		t.Error("an all-green picture should be refused")
 	}
-	if _, err := loadFace(filepath.Join(t.TempDir(), "missing.png"), [4]float64{0, 0, 1, 1}); err == nil {
+	if _, err := loadFace(filepath.Join(t.TempDir(), "missing.png"), [4]float64{0, 0, 1, 1}, nil); err == nil {
 		t.Error("a missing file should be refused")
 	}
 }
@@ -74,7 +74,7 @@ func TestLoadFaceMeasuresEachRow(t *testing.T) {
 		}
 		return color.RGBA{60, 140, 50, 255}
 	})
-	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,11 +99,11 @@ func TestHalfTurnShowsTheMirror(t *testing.T) {
 			return color.RGBA{110, 50, 30, 255}
 		}
 	})
-	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	face = f
+	face = &head{photo: f}
 	defer func() { face = nil }()
 	var p params
 	p.mid, p.center = rgb{200, 200, 200}, rgb{255, 255, 255}
@@ -124,7 +124,7 @@ func TestLoadFaceUsesTransparency(t *testing.T) {
 		}
 		return color.NRGBA{0, 0, 0, 0}
 	})
-	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

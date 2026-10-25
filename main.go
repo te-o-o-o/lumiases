@@ -71,7 +71,7 @@ func main() {
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
 	var facePaths pathList
-	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over, best a PNG with its background removed; repeat it, or list photos after the flags, and h switches between them and the orb")
+	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over (best a PNG with its background removed), or a folder of frames from tools/turntable.py; repeat it, or list photos after the flags, and h switches between them and the orb")
 	cropArg := flag.String("crop", "0,0,1,1", "statue mode: part of each photo to keep, as x0,y0,x1,y1 fractions")
 	flag.Parse()
 
@@ -79,10 +79,10 @@ func main() {
 	for i, s := range strings.SplitN(*cropArg, ",", 4) {
 		crop[i], _ = strconv.ParseFloat(strings.TrimSpace(s), 64)
 	}
-	var heads []*faceImg
+	var heads []*head
 	var headNames []string
 	for _, path := range append(facePaths, flag.Args()...) {
-		f, err := loadFace(path, crop)
+		f, err := loadHead(path, crop)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
