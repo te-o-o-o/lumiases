@@ -73,6 +73,8 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 | `s` | passe du braille à l'ASCII |
 | `1`–`8` | choisit un état |
 | `c` | relance le défilement des états |
+| `h` | tête suivante, puis retour à l'orbe (mode statue) |
+| `r` | fait tourner la tête (mode statue) |
 | `e` | forme d'yeux suivante |
 | `f` | affiche ou masque les yeux |
 | espace | pause |
@@ -84,14 +86,19 @@ panneau donne plus de cellules, donc une orbe plus fine.
 ## Mode statue
 
 ```
-lumiases -face statue.jpg -style ascii
+lumiases heads/*.png                         # toutes les têtes, h passe de l'une à l'autre et à l'orbe
+lumiases -face buste.png -style ascii
 lumiases -face statue.jpg -crop 0.2,0.1,0.82,0.66
 ```
 
-`-face` prend un PNG ou un JPEG de statue, `-crop` la partie à garder en
-fractions `x0,y0,x1,y1` de l'image. La statue est séparée de son fond par la
-couleur : pour l'instant il faut de la pierre chaude (terre cuite, grès) sur un
-fond vert comme du feuillage ; aucune photo n'est fournie avec lumiases.
+Donnez des photos de statues avec `-face` (répétable) ou après les options ;
+`h` passe d'une tête à la suivante puis revient à l'orbe, `r` fait tourner la
+tête. Le mieux est un PNG détouré (macOS : Aperçu ou Photos, « Supprimer
+l'arrière-plan ») ; sans transparence, la statue est reconnue par sa couleur,
+ce qui ne marche que pour de la pierre chaude sur du feuillage. `-crop` garde
+une partie de chaque image, en fractions `x0,y0,x1,y1`. Aucune photo n'est
+fournie avec lumiases : les images en accès libre du Metropolitan Museum (CC0)
+sont une bonne source.
 
 ## Développement
 

@@ -71,6 +71,8 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 | `s` | switch between braille and ASCII |
 | `1`–`8` | pick a state |
 | `c` | cycle through the states again |
+| `h` | next head, then back to the orb (statue mode) |
+| `r` | turn the head round (statue mode) |
 | `e` | next eye shape |
 | `f` | show or hide the eyes |
 | space | pause |
@@ -82,14 +84,18 @@ means more cells, so a finer orb.
 ## Statue mode
 
 ```
-lumiases -face statue.jpg -style ascii
+lumiases heads/*.png                         # every head, h switches between them and the orb
+lumiases -face bust.png -style ascii
 lumiases -face statue.jpg -crop 0.2,0.1,0.82,0.66
 ```
 
-`-face` takes a PNG or JPEG of a statue, `-crop` the part to keep as
-`x0,y0,x1,y1` fractions of the picture. The statue is told apart from its
-background by colour, so for now it needs warm stone (terracotta, sandstone)
-on a green background such as foliage; no photo ships with lumiases.
+Give photos of statues with `-face` (repeat it) or after the flags; `h` goes
+from one head to the next and back to the orb, `r` turns the head round.
+Best is a PNG with the background removed (macOS: Preview or Photos,
+"Remove Background"); without transparency, the statue is told apart by
+colour, which only works for warm stone on greenery. `-crop` keeps a part of
+each picture, as `x0,y0,x1,y1` fractions. No photo ships with lumiases: the
+Metropolitan Museum's open-access pictures (CC0) are a good source.
 
 ## Development
 

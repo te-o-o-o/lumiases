@@ -42,9 +42,17 @@ renderer came first.
 - **The photo never moves; where it is read does.** Sway, breathing, ripples,
   glitches and smoke all bend the coordinates before the lookup, so every
   effect composes with the others for free.
-- **Colour key, not a mask.** The statue is told apart by "red above green",
-  which fits terracotta on foliage and nothing else; a mask file or an alpha
-  channel is the way out when another photo matters.
+- **Transparency first, colour key as a fallback.** A cut-out PNG's alpha is
+  the mask; without one, "red above green" keys terracotta on foliage and
+  nothing else. Museum photos are cut out with macOS Vision (the engine
+  behind "Remove Background"), cropped to head and neck, kept in the
+  ignored `heads/` folder.
+- **Turning: one cylinder per row, the back mirrored.** Mirroring makes the
+  seams at ±90° meet; the profile is still empty (no photo saw it), hence
+  the soft burst there. Real profiles need 3D models.
+- **Faces need contrast more than pixels.** At 30 columns a head, the
+  features only show with a strong unsharp mask and an S-curve; a smaller
+  font in the pane helps more than any setting.
 - **Unsharp mask on load.** A face gets few cells in a terminal; without
   pushing local contrast, the eyes, nose and lips melt into the cheeks.
 - **No photo in the repository.** The one used while building it came from a

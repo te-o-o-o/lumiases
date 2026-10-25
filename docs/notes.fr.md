@@ -45,10 +45,19 @@ venu d'abord.
 - **La photo ne bouge jamais ; c'est l'endroit où on la lit qui bouge.**
   Balancement, respiration, ondes, glitchs et fumée tordent tous les
   coordonnées avant la lecture : les effets se combinent d'eux-mêmes.
-- **Clé de couleur, pas de masque.** La statue est reconnue par « rouge au-dessus
-  du vert », ce qui marche pour de la terre cuite sur du feuillage et rien
-  d'autre ; un fichier de masque ou un canal alpha sera la solution quand une
-  autre photo comptera.
+- **La transparence d'abord, la clé de couleur en secours.** L'alpha d'un PNG
+  détouré sert de masque ; sans lui, « rouge au-dessus du vert » ne reconnaît
+  que de la terre cuite sur du feuillage. Les photos de musée sont détourées
+  avec Vision de macOS (le moteur de « Supprimer l'arrière-plan »), recadrées
+  sur la tête et le cou, et rangées dans `heads/`, ignoré par git.
+- **Rotation : un cylindre par ligne, l'arrière en miroir.** Le miroir fait se
+  rejoindre les raccords à ±90° ; le profil reste vide (aucune photo ne l'a
+  vu), d'où l'explosion douce à cet endroit. De vrais profils demandent des
+  modèles 3D.
+- **Un visage a besoin de contraste plus que de pixels.** À 30 colonnes par
+  tête, les traits n'apparaissent qu'avec un masque flou fort et une courbe en
+  S ; une police plus petite dans le panneau aide plus que n'importe quel
+  réglage.
 - **Masque flou au chargement.** Un visage a peu de cellules dans un
   terminal ; sans pousser le contraste local, les yeux, le nez et la bouche
   fondent dans les joues.
