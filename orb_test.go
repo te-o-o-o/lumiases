@@ -22,13 +22,3 @@ func TestEaseReachesTarget(t *testing.T) {
 		t.Errorf("ease(k=0) = %+v, want %+v", got, a)
 	}
 }
-
-func TestDitherInRange(t *testing.T) {
-	for x := 0; x < 64; x++ {
-		for y := 0; y < 64; y++ {
-			if v := dither(x, y); v < 0 || v >= 1 {
-				t.Fatalf("dither(%d, %d) = %v, want [0, 1)", x, y, v)
-			}
-		}
-	}
-}

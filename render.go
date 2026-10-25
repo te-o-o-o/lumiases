@@ -18,9 +18,72 @@ func fg(c rgb, a float64) string {
 	return fmt.Sprintf("\x1b[38;2;%d;%d;%dm", int(c.r*a), int(c.g*a), int(c.b*a))
 }
 
-// ramp runs from empty to dense. Round glyphs (o, O) suit an orb; few
-// steps means little flicker as the noise moves.
+// ramp textures flat cells, from empty to dense. Round glyphs (o, O) suit
+// an orb; few steps means little flicker as the noise moves.
 var ramp = []rune(" .·:;=+*xoO#%@")
+
+// glyphShapes says where each glyph puts its ink in a cell cut into 2
+// columns by 4 rows (left then right, top row first), in tenths. ASCII
+// samples the same 2x4 grid as braille and takes the glyph whose shape is
+// closest, so `"` lands where only the top is lit, `(` where the left is,
+// `/` on a diagonal: the inner contours of a face survive.
+// ponytail: shapes estimated by eye for a typical monospace font, not
+// measured; rasterising the real font would make the match exact.
+var glyphShapes = map[rune]string{
+	' ': "00000000", '.': "00000033", ',': "00000042", '_': "00000066",
+	'-': "00005500", '=': "00444400", '\'': "22000000", '`': "31000000",
+	'"': "44000000", '^': "44220000", ':': "00330033", ';': "00330042",
+	'!': "33330022", '|': "33333333", '(': "14404014", ')': "41040441",
+	'[': "54505054", ']': "45050545", '/': "05233250", '\\': "50322305",
+	'+': "11445511", '*': "22553300", 'x': "00334433", 'o': "00445544",
+	'O': "55444455", '#': "66666666", '@': "77777777", 'b': "50505555",
+	'd': "05055555", 'p': "00555550", 'q': "00555505", 'T': "66333333",
+	'L': "50505066", 'J': "05050566", 'r': "00554040",
+}
+
+type glyphShape struct {
+	r     rune
+	cover [8]float64
+}
+
+var glyphs = func() []glyphShape {
+	var gs []glyphShape
+	for r, s := range glyphShapes {
+		g := glyphShape{r: r}
+		for k := range g.cover {
+			g.cover[k] = float64(s[k]-'0') / 7 // 7 tenths of ink reads as full light
+		}
+		gs = append(gs, g)
+	}
+	return gs
+}()
+
+// bestGlyph returns the glyph for a cell's 8 lit values: the density ramp
+// for a flat cell, else the glyph whose ink pattern is closest, after
+// pushing the values apart from their mean so edges pick a shaped glyph.
+func bestGlyph(s [8]float64) rune {
+	mean, lo, hi := 0.0, 1.0, 0.0
+	for _, v := range s {
+		mean, lo, hi = mean+v/8, math.Min(lo, v), math.Max(hi, v)
+	}
+	// A flat cell has no shape to follow: shape matching would fill every
+	// flat grey area with `|`.
+	if hi-lo < 0.22 {
+		return ramp[min(int(mean*float64(len(ramp))), len(ramp)-1)]
+	}
+	best, bestD := ' ', math.Inf(1)
+	for _, g := range glyphs {
+		d := 0.0
+		for k, v := range s {
+			e := math.Max(0, math.Min(1, mean+(v-mean)*1.7)) - g.cover[k]
+			d += e * e
+		}
+		if d < bestD {
+			best, bestD = g.r, d
+		}
+	}
+	return best
+}
 
 // frame draws one picture of w×h cells, the last row being the label, and
 // returns it as one write: synchronized output keeps it from tearing.
@@ -50,24 +113,26 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 			for i := 0; i < w; i++ {
 				fx, fy := float64(i)+0.5, float64(j)+0.5
 				if style == "ascii" {
-					c, a, d := at(fx, fy)
-					spark := 0.0
+					var s [8]float64
+					var sum rgb
+					peak := 0.0
 					for k := 0; k < 8; k++ {
-						spark = math.Max(spark, sp[(4*j+k/2)*gw+2*i+k%2])
-					}
-					if d > 1 && spark > 0.15 {
-						g := "·"
-						if spark > 0.6 {
-							g = "*"
+						dx, dy := k%2, k/2
+						c, a, _ := at(fx-0.25+0.5*float64(dx), fy-0.375+0.25*float64(dy))
+						if sk := sp[(4*j+dy)*gw+2*i+dx]; sk > a {
+							a, c = sk, dust
 						}
-						sb.WriteString(fg(dust, 0.3+0.7*spark) + g)
-						continue
+						s[k], peak = a, math.Max(peak, a)
+						sum = rgb{sum.r + c.r/8, sum.g + c.g/8, sum.b + c.b/8}
 					}
-					if a < 0.015 {
+					g := bestGlyph(s)
+					if g == ' ' {
 						sb.WriteByte(' ')
 						continue
 					}
-					sb.WriteString(fg(c, 0.35+0.65*a) + string(ramp[int(a*float64(len(ramp)-1))]))
+					// Brightness from the cell's brightest point: a thin stroke
+					// on an edge still carries the light it stands for.
+					sb.WriteString(fg(sum, 0.35+0.65*peak) + string(g))
 					continue
 				}
 				bits := [8]int{0x01, 0x08, 0x02, 0x10, 0x04, 0x20, 0x40, 0x80}
