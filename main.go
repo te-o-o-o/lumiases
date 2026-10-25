@@ -63,7 +63,21 @@ func main() {
 	state := flag.String("state", "", "fixed state (idle, thinking, reading, editing, running, waiting, error, done); empty cycles through all")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
+	facePath := flag.String("face", "", "statue mode: a photo of a statue the matter flows over, instead of the orb")
+	cropArg := flag.String("crop", "0.2,0.1,0.82,0.66", "statue mode: part of the photo to keep, as x0,y0,x1,y1 fractions")
 	flag.Parse()
+
+	if *facePath != "" {
+		var crop [4]float64
+		for i, s := range strings.SplitN(*cropArg, ",", 4) {
+			crop[i], _ = strconv.ParseFloat(strings.TrimSpace(s), 64)
+		}
+		var err error
+		if face, err = loadFace(*facePath, crop); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
 
 	cur, cycle, eyesOn := 0, *state == "", true
 	for i, s := range states {
@@ -120,7 +134,7 @@ func main() {
 		}
 		k := 1 - math.Exp(-dt*3) // ~300 ms morph between states
 		want := states[cur].p
-		want.eyes = stateEyes[states[cur].name]
+		want.eyes, want.statue = stateEyes[states[cur].name], stateStatue[states[cur].name]
 		p = ease(p, want, k)
 		p.eyes.shown = lerp(p.eyes.shown, map[bool]float64{true: 1}[eyesOn], k)
 		ph += dt * p.speed
