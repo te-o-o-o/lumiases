@@ -1,8 +1,8 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s style, 1-8 state, e eye shape, f eyes on/off, c cycle states,
-// space pause, q quit.
+// Keys: s style, 1-8 state, e eye shape, f eyes on/off, r turn the statue,
+// c cycle states, space pause, q quit.
 package main
 
 import (
@@ -79,7 +79,7 @@ func main() {
 		}
 	}
 
-	cur, cycle, eyesOn := 0, *state == "", true
+	cur, cycle, eyesOn, spinOn := 0, *state == "", true, false
 	for i, s := range states {
 		if s.name == *state {
 			cur = i
@@ -119,6 +119,8 @@ func main() {
 				eyeStyle = eyeStyles[(i+1)%len(eyeStyles)]
 			case k == 'f':
 				eyesOn = !eyesOn
+			case k == 'r':
+				spinOn = !spinOn
 			case k == ' ':
 				paused = !paused
 			case k >= '1' && k <= '8':
@@ -137,9 +139,25 @@ func main() {
 		want.eyes, want.statue = stateEyes[states[cur].name], stateStatue[states[cur].name]
 		p = ease(p, want, k)
 		p.eyes.shown = lerp(p.eyes.shown, map[bool]float64{true: 1}[eyesOn], k)
+		if spin := map[bool]float64{true: 0.8}[spinOn] + p.statue.spin; spin > 0.01 {
+			p.statue.angle += dt * spin
+		} else { // the spin is over: come back to the nearest front view
+			front := math.Round(p.statue.angle/(2*math.Pi)) * 2 * math.Pi
+			p.statue.angle = lerp(p.statue.angle, front, k)
+		}
+		// A blast runs once, slowly (~3 s), from entering the state; leaving
+		// it resets at once, or easing back would burst a second time.
+		if want.statue.blast > 0 {
+			p.statue.blast = lerp(p.statue.blast, 1, 1-math.Exp(-dt*0.8))
+		} else {
+			p.statue.blast = 0
+		}
 		ph += dt * p.speed
 		w, h := termSize()
 		hint := "   s style · 1-8 state · e eye shape · f eyes on/off · c cycle · space pause · q quit"
+		if face != nil {
+			hint = "   s style · 1-8 state · r turn · c cycle · space pause · q quit"
+		}
 		os.Stdout.WriteString(frame(w, h, t, ph, p, *style, fmt.Sprintf(" %s · %s%s", states[cur].name, *style, hint)))
 	}
 }

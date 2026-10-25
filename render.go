@@ -96,8 +96,11 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 		return sample((cx-float64(w)/2)/scale, (cy-float64(rows)/2)*2/scale, t, ph, p)
 	}
 	sp, gw := sparks(w, rows, scale, ph, p), 2*w
-	if face != nil { // the dust leaves an orb's rim, which a statue lacks
-		sp = make([]float64, len(sp))
+	if face != nil { // a statue throws dust only when it bursts
+		b := 0.6 * burst(t, p.statue)
+		for i := range sp {
+			sp[i] *= b
+		}
 	}
 	dust := lerpC(p.mid, p.center, 0.4)
 

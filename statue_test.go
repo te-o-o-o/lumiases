@@ -66,3 +66,51 @@ func TestEveryStateHasAStatueEffect(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadFaceMeasuresEachRow(t *testing.T) {
+	path := writePNG(t, 200, 200, func(x, y int) color.Color {
+		if (x-100)*(x-100)+(y-100)*(y-100) < 60*60 {
+			return color.RGBA{210, 140, 100, 255}
+		}
+		return color.RGBA{60, 140, 50, 255}
+	})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mid := f.h / 2
+	if a := f.axis[mid]; a < 0.45 || a > 0.55 {
+		t.Errorf("axis of the middle row = %.2f, want about 0.5", a)
+	}
+	if h := f.half[mid]; h < 0.25 || h > 0.35 {
+		t.Errorf("half-width of the middle row = %.2f, want about 0.3", h)
+	}
+}
+
+func TestHalfTurnShowsTheMirror(t *testing.T) {
+	// A disc of stone, bright on its left half, dark on its right.
+	path := writePNG(t, 200, 200, func(x, y int) color.Color {
+		switch {
+		case (x-100)*(x-100)+(y-100)*(y-100) >= 80*80:
+			return color.RGBA{60, 140, 50, 255}
+		case x < 100:
+			return color.RGBA{230, 160, 120, 255}
+		default:
+			return color.RGBA{110, 50, 30, 255}
+		}
+	})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	face = f
+	defer func() { face = nil }()
+	var p params
+	p.mid, p.center = rgb{200, 200, 200}, rgb{255, 255, 255}
+	_, front, _ := sampleFace(-0.4, 0, 0, 0, p)
+	p.statue.angle = 3.14159
+	_, back, _ := sampleFace(-0.4, 0, 0, 0, p)
+	if front < 0.5 || back > front/2 {
+		t.Errorf("left of the screen: %.2f facing, %.2f after a half turn; the mirror should put the dark side there", front, back)
+	}
+}
