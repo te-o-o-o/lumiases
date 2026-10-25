@@ -9,9 +9,11 @@ type rgb struct{ r, g, b float64 }
 type params struct {
 	amp, speed, warp, shake, pulse, size float64
 	center, mid, edge                    rgb
+	eyes                                 eyeParams
 }
 
 // states are the moods Claude's actions map to; their order is the 1-8 keys.
+// Each state's eyes live in stateEyes, next to the eyes.
 var states = []struct {
 	name string
 	p    params
@@ -37,7 +39,13 @@ func ease(a, b params, k float64) params {
 		amp: lerp(a.amp, b.amp, k), speed: lerp(a.speed, b.speed, k), warp: lerp(a.warp, b.warp, k),
 		shake: lerp(a.shake, b.shake, k), pulse: lerp(a.pulse, b.pulse, k), size: lerp(a.size, b.size, k),
 		center: lerpC(a.center, b.center, k), mid: lerpC(a.mid, b.mid, k), edge: lerpC(a.edge, b.edge, k),
+		eyes: a.eyes.ease(b.eyes, k),
 	}
+}
+
+func smoothstep(e0, e1, x float64) float64 {
+	k := math.Max(0, math.Min(1, (x-e0)/(e1-e0)))
+	return k * k * (3 - 2*k)
 }
 
 func hash(x, y int) float64 {
@@ -108,7 +116,10 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	i := (0.45 + 0.55*diffuse) * (0.7 + 0.6*(tex-0.5)) * (1 - 0.35*d)
 	i = math.Min(1, i+0.5*spec)
 	i = i * i * (3 - 2*i) // S-curve: deeper shadows, punchier highlights
-	return lerpC(c, rgb{255, 255, 255}, 0.7*spec), i, d
+	// Eyes use the warped coordinates, so they wobble with the matter.
+	k, g := eyes(wx/p.size, wy/p.size, t, p.eyes)
+	i = math.Max(i*(1-0.95*k), g)
+	return lerpC(c, rgb{255, 255, 255}, math.Max(0.7*spec, 0.6*g)), i, d
 }
 
 // sparks returns a brightness grid at braille dot resolution (2 per cell

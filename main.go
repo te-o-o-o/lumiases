@@ -1,7 +1,8 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s style, 1-8 state, c cycle states, space pause, q quit.
+// Keys: s style, 1-8 state, e eye shape, f eyes on/off, c cycle states,
+// space pause, q quit.
 package main
 
 import (
@@ -61,9 +62,10 @@ func main() {
 	style := flag.String("style", "braille", "braille | ascii")
 	state := flag.String("state", "", "fixed state (idle, thinking, reading, editing, running, waiting, error, done); empty cycles through all")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
+	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
 	flag.Parse()
 
-	cur, cycle := 0, *state == ""
+	cur, cycle, eyesOn := 0, *state == "", true
 	for i, s := range states {
 		if s.name == *state {
 			cur = i
@@ -93,6 +95,16 @@ func main() {
 				*style = map[string]string{"braille": "ascii", "ascii": "braille"}[*style]
 			case k == 'c':
 				cycle, cycleAt = !cycle, t
+			case k == 'e':
+				i := 0
+				for j, s := range eyeStyles {
+					if s == eyeStyle {
+						i = j
+					}
+				}
+				eyeStyle = eyeStyles[(i+1)%len(eyeStyles)]
+			case k == 'f':
+				eyesOn = !eyesOn
 			case k == ' ':
 				paused = !paused
 			case k >= '1' && k <= '8':
@@ -107,10 +119,13 @@ func main() {
 			cur, cycleAt = (cur+1)%len(states), t
 		}
 		k := 1 - math.Exp(-dt*3) // ~300 ms morph between states
-		p = ease(p, states[cur].p, k)
+		want := states[cur].p
+		want.eyes = stateEyes[states[cur].name]
+		p = ease(p, want, k)
+		p.eyes.shown = lerp(p.eyes.shown, map[bool]float64{true: 1}[eyesOn], k)
 		ph += dt * p.speed
 		w, h := termSize()
-		hint := "   s style · 1-8 state · c cycle · space pause · q quit"
+		hint := "   s style · 1-8 state · e eye shape · f eyes on/off · c cycle · space pause · q quit"
 		os.Stdout.WriteString(frame(w, h, t, ph, p, *style, fmt.Sprintf(" %s · %s%s", states[cur].name, *style, hint)))
 	}
 }
