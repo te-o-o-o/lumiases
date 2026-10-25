@@ -92,10 +92,12 @@ func (h *head) aspect() float64 {
 // by transparency when the picture has some (a cut-out PNG), else by a
 // colour key that only knows warm stone against greenery (red above green).
 // The statue's tones are stretched to the full range: over its own range
-// when tone is nil (a photo), else over *tone, computed into it when still
-// zero, so every frame of a rendered head shares the front frame's
-// exposure instead of flickering from one angle to the next.
-func loadFace(path string, crop [4]float64, tone *[2]float64) (*faceImg, error) {
+// when tone is nil (a photo), else over *tone (low, high, gamma), computed
+// into it when still zero, so every frame of a rendered head shares the
+// front frame's exposure instead of flickering from one angle to the next.
+// The gamma brings a render's mid-tone to mid-grey: a clay bust is mostly
+// lit surface, which would otherwise all land on the brightest glyph.
+func loadFace(path string, crop [4]float64, tone *[3]float64) (*faceImg, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -153,13 +155,17 @@ func loadFace(path string, crop [4]float64, tone *[2]float64) (*faceImg, error) 
 		if hi-lo < 0.1 { // a flat picture has no range to stretch: keep its tones
 			lo, hi = 0, 1
 		}
-		if tone == nil {
-			tone = &[2]float64{}
+		gamma := 1.0
+		if tone != nil {
+			med := math.Max(0.05, math.Min(0.95, (stone[len(stone)/2]-lo)/(hi-lo)))
+			gamma = math.Log(0.45) / math.Log(med)
+		} else {
+			tone = &[3]float64{}
 		}
-		tone[0], tone[1] = lo, hi
+		tone[0], tone[1], tone[2] = lo, hi, gamma
 	}
 	for k, l := range lum {
-		lum[k] = math.Max(0, math.Min(1, (l-tone[0])/(tone[1]-tone[0]+1e-9)))
+		lum[k] = math.Pow(math.Max(0, math.Min(1, (l-tone[0])/(tone[1]-tone[0]+1e-9))), tone[2])
 	}
 	// Unsharp mask: a terminal has few cells for a face, so the features
 	// (eyes, nose, lips) need their local contrast pushed or they melt away.

@@ -48,7 +48,7 @@ func loadFrames(dir string) (*frameHead, error) {
 
 	// The front frame sets the exposure for all; then decode the rest in
 	// parallel, as a head is often a hundred PNGs.
-	var tone [2]float64
+	var tone [3]float64
 	front := slices.IndexFunc(keys, func(k key) bool { return k.expr == "neutral" && k.yaw == 0 && k.pitch == 0 })
 	if front < 0 {
 		return nil, fmt.Errorf("%s: no neutral-y000-p0.png to set the exposure", dir)
