@@ -15,6 +15,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `statue.go` | `statueParams`, `stateStatue`, photo loading and keying, `sampleFace` | Effects bend where the photo is read, never the photo. |
 | `render.go` | `frame`: braille dithering, ASCII glyph matching | One goroutine per row; one write per frame inside synchronized output. |
 | `term_unix.go`, `term_windows.go` | `ttySize` | Windows has none yet. |
+| `tools/cutout.swift` | Cuts a statue out of a photo into a transparent PNG (macOS Vision) | A helper to prepare heads, outside the Go build; heads live in the ignored `heads/`. |
 
 Every new state needs an entry in `states`, `stateEyes` and `stateStatue`
 (tests check it).

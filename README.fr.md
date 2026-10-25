@@ -94,7 +94,8 @@ lumiases -face statue.jpg -crop 0.2,0.1,0.82,0.66
 Donnez des photos de statues avec `-face` (répétable) ou après les options ;
 `h` passe d'une tête à la suivante puis revient à l'orbe, `r` fait tourner la
 tête. Le mieux est un PNG détouré (macOS : Aperçu ou Photos, « Supprimer
-l'arrière-plan ») ; sans transparence, la statue est reconnue par sa couleur,
+l'arrière-plan », ou `swift tools/cutout.swift photo.jpg heads/buste.png 0 0 1 0.7`
+pour détourer et garder les 70 % du haut) ; sans transparence, la statue est reconnue par sa couleur,
 ce qui ne marche que pour de la pierre chaude sur du feuillage. `-crop` garde
 une partie de chaque image, en fractions `x0,y0,x1,y1`. Aucune photo n'est
 fournie avec lumiases : les images en accès libre du Metropolitan Museum (CC0)
