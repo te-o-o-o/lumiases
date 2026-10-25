@@ -50,13 +50,14 @@ type faceImg struct {
 	axis, half []float64
 }
 
-// face is set once at start in statue mode, nil otherwise.
+// face is the head being drawn, nil for the orb; main switches it between
+// frames.
 var face *faceImg
 
 // loadFace reads a photo, keeps the crop box (fractions of the picture),
-// shrinks it to at most 360 px and keys the statue out of its background.
-// ponytail: the key is warm stone against greenery (red above green); a
-// statue on another background needs another key or a mask file.
+// shrinks it to at most 360 px and tells the statue from its background:
+// by transparency when the picture has some (a cut-out PNG), else by a
+// colour key that only knows warm stone against greenery (red above green).
 func loadFace(path string, crop [4]float64) (*faceImg, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -73,31 +74,40 @@ func loadFace(path string, crop [4]float64) (*faceImg, error) {
 	if x1-x0 < 8 || y1-y0 < 8 {
 		return nil, fmt.Errorf("%s: the crop box keeps too little of the picture", path)
 	}
+	opaque, ok := img.(interface{ Opaque() bool })
+	cutOut := ok && !opaque.Opaque()
 	step := max(1, max(x1-x0, y1-y0)/360)
 	fi := &faceImg{w: (x1 - x0) / step, h: (y1 - y0) / step}
 	fi.lum, fi.mask = make([]float64, fi.w*fi.h), make([]float64, fi.w*fi.h)
 	var stone []float64
 	for j := 0; j < fi.h; j++ {
 		for i := 0; i < fi.w; i++ {
-			var r, g, bl float64 // box average of the step×step block
+			var r, g, bl, al float64 // box sums of the step×step block
 			for dy := 0; dy < step; dy++ {
 				for dx := 0; dx < step; dx++ {
-					cr, cg, cb, _ := img.At(x0+i*step+dx, y0+j*step+dy).RGBA()
-					r, g, bl = r+float64(cr), g+float64(cg), bl+float64(cb)
+					cr, cg, cb, ca := img.At(x0+i*step+dx, y0+j*step+dy).RGBA()
+					r, g, bl, al = r+float64(cr), g+float64(cg), bl+float64(cb), al+float64(ca)
 				}
 			}
-			n := float64(step*step) * 65535
-			r, g, bl = r/n, g/n, bl/n
 			k := j*fi.w + i
+			if cutOut {
+				fi.mask[k] = al / (float64(step*step) * 65535)
+				if al > 0 { // RGBA() is premultiplied: divide the alpha back out
+					r, g, bl = r/al, g/al, bl/al
+				}
+			} else {
+				n := float64(step*step) * 65535
+				r, g, bl = r/n, g/n, bl/n
+				fi.mask[k] = smoothstep(0.04, 0.12, r-g)
+			}
 			fi.lum[k] = 0.299*r + 0.587*g + 0.114*bl
-			fi.mask[k] = smoothstep(0.04, 0.12, r-g)
 			if fi.mask[k] > 0.5 {
 				stone = append(stone, fi.lum[k])
 			}
 		}
 	}
 	if len(stone) < 100 {
-		return nil, fmt.Errorf("%s: no statue found (the key looks for warm stone on a green background)", path)
+		return nil, fmt.Errorf("%s: no statue found (give a PNG with the background removed, or warm stone on a green background)", path)
 	}
 	// Stretch the stone's own range to 0..1, ignoring the 2% extremes.
 	sort.Float64s(stone)
@@ -107,9 +117,10 @@ func loadFace(path string, crop [4]float64) (*faceImg, error) {
 	}
 	// Unsharp mask: a terminal has few cells for a face, so the features
 	// (eyes, nose, lips) need their local contrast pushed or they melt away.
-	blur := boxBlur(fi.lum, fi.w, fi.h, 5)
+	blur := boxBlur(fi.lum, fi.w, fi.h, 7)
 	for k, l := range fi.lum {
-		fi.lum[k] = math.Max(0, math.Min(1, l+1.3*(l-blur[k])))
+		l = math.Max(0, math.Min(1, l+2.2*(l-blur[k])))
+		fi.lum[k] = l * l * (3 - 2*l) // S-curve: sockets and nostrils go dark
 	}
 	// Measure each row's width, smoothed over a few rows so a stray speck
 	// of warm background doesn't make one cylinder jut out.

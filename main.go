@@ -1,8 +1,8 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s style, 1-8 state, e eye shape, f eyes on/off, r turn the statue,
-// c cycle states, space pause, q quit.
+// Keys: s style, 1-8 state, h next head (statue mode), e eye shape, f eyes
+// on/off, r turn the statue, c cycle states, space pause, q quit.
 package main
 
 import (
@@ -12,11 +12,18 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 )
+
+// pathList is a flag that can be given more than once.
+type pathList []string
+
+func (l *pathList) String() string     { return strings.Join(*l, ",") }
+func (l *pathList) Set(s string) error { *l = append(*l, s); return nil }
 
 func termSize() (int, int) {
 	if w, h, ok := ttySize(); ok {
@@ -63,20 +70,28 @@ func main() {
 	state := flag.String("state", "", "fixed state (idle, thinking, reading, editing, running, waiting, error, done); empty cycles through all")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
-	facePath := flag.String("face", "", "statue mode: a photo of a statue the matter flows over, instead of the orb")
-	cropArg := flag.String("crop", "0.2,0.1,0.82,0.66", "statue mode: part of the photo to keep, as x0,y0,x1,y1 fractions")
+	var facePaths pathList
+	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over, best a PNG with its background removed; repeat it, or list photos after the flags, and h switches between them and the orb")
+	cropArg := flag.String("crop", "0,0,1,1", "statue mode: part of each photo to keep, as x0,y0,x1,y1 fractions")
 	flag.Parse()
 
-	if *facePath != "" {
-		var crop [4]float64
-		for i, s := range strings.SplitN(*cropArg, ",", 4) {
-			crop[i], _ = strconv.ParseFloat(strings.TrimSpace(s), 64)
-		}
-		var err error
-		if face, err = loadFace(*facePath, crop); err != nil {
+	var crop [4]float64
+	for i, s := range strings.SplitN(*cropArg, ",", 4) {
+		crop[i], _ = strconv.ParseFloat(strings.TrimSpace(s), 64)
+	}
+	var heads []*faceImg
+	var headNames []string
+	for _, path := range append(facePaths, flag.Args()...) {
+		f, err := loadFace(path, crop)
+		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+		heads, headNames = append(heads, f), append(headNames, strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
+	}
+	head := 0 // 0 is the orb, i the heads[i-1]
+	if len(heads) > 0 {
+		head, face = 1, heads[0]
 	}
 
 	cur, cycle, eyesOn, spinOn := 0, *state == "", true, false
@@ -121,6 +136,11 @@ func main() {
 				eyesOn = !eyesOn
 			case k == 'r':
 				spinOn = !spinOn
+			case k == 'h':
+				head, face = (head+1)%(len(heads)+1), nil
+				if head > 0 {
+					face = heads[head-1]
+				}
 			case k == ' ':
 				paused = !paused
 			case k >= '1' && k <= '8':
@@ -154,10 +174,15 @@ func main() {
 		}
 		ph += dt * p.speed
 		w, h := termSize()
+		label := fmt.Sprintf(" %s · %s", states[cur].name, *style)
 		hint := "   s style · 1-8 state · e eye shape · f eyes on/off · c cycle · space pause · q quit"
 		if face != nil {
+			label += " · " + headNames[head-1]
 			hint = "   s style · 1-8 state · r turn · c cycle · space pause · q quit"
 		}
-		os.Stdout.WriteString(frame(w, h, t, ph, p, *style, fmt.Sprintf(" %s · %s%s", states[cur].name, *style, hint)))
+		if len(heads) > 0 {
+			hint = "   h head ·" + strings.TrimPrefix(hint, "  ")
+		}
+		os.Stdout.WriteString(frame(w, h, t, ph, p, *style, label+hint))
 	}
 }

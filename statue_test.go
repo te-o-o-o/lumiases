@@ -114,3 +114,24 @@ func TestHalfTurnShowsTheMirror(t *testing.T) {
 		t.Errorf("left of the screen: %.2f facing, %.2f after a half turn; the mirror should put the dark side there", front, back)
 	}
 }
+
+func TestLoadFaceUsesTransparency(t *testing.T) {
+	// Grey marble on a transparent background: the colour key would find
+	// nothing, the alpha channel finds it all.
+	path := writePNG(t, 200, 200, func(x, y int) color.Color {
+		if (x-100)*(x-100)+(y-100)*(y-100) < 60*60 {
+			return color.NRGBA{uint8(150 + x/4), uint8(150 + x/4), uint8(150 + x/4), 255}
+		}
+		return color.NRGBA{0, 0, 0, 0}
+	})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, m := f.at(0.5, 0.5); m < 0.99 {
+		t.Errorf("centre should be statue, mask = %.2f", m)
+	}
+	if _, m := f.at(0.05, 0.05); m > 0.01 {
+		t.Errorf("corner should be background, mask = %.2f", m)
+	}
+}
