@@ -21,6 +21,8 @@ ap.add_argument("--step", type=int, default=10, help="degrees between yaw frames
 ap.add_argument("--pitch", default="-12,0,12", help="nod angles in degrees, comma separated")
 ap.add_argument("--size", type=int, default=360, help="frame height in pixels")
 ap.add_argument("--faces", type=int, default=150_000, help="decimate meshes above this many faces")
+ap.add_argument("--rotate", default="", help="turns to stand the model up, applied in order, e.g. z:-90,y:90 (degrees)")
+ap.add_argument("--smooth", type=int, default=0, help="smoothing passes, for bumpy generated meshes")
 args = ap.parse_args(sys.argv[sys.argv.index("--") + 1 :])
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -42,7 +44,12 @@ bpy.context.view_layer.objects.active = meshes[0]
 if len(meshes) > 1:
     bpy.ops.object.join()
 head = bpy.context.view_layer.objects.active
+# Apply the importer's own axis conversion first, then --rotate on top.
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+for turn in filter(None, args.rotate.split(",")):
+    axis, deg = turn.split(":")
+    head.rotation_euler = [math.radians(float(deg)) if a == axis else 0 for a in "xyz"]
+    bpy.ops.object.transform_apply(rotation=True)
 corners = [Vector(c) for c in head.bound_box]
 lo = Vector(min(c[i] for c in corners) for i in range(3))
 hi = Vector(max(c[i] for c in corners) for i in range(3))
@@ -58,6 +65,10 @@ width = max(hi.x - lo.x, hi.y - lo.y) * s
 if len(head.data.polygons) > args.faces and not head.data.shape_keys:
     m = head.modifiers.new("decimate", "DECIMATE")
     m.ratio = args.faces / len(head.data.polygons)
+    bpy.ops.object.modifier_apply(modifier=m.name)
+if args.smooth:
+    m = head.modifiers.new("smooth", "SMOOTH")
+    m.factor, m.iterations = 0.6, args.smooth
     bpy.ops.object.modifier_apply(modifier=m.name)
 bpy.ops.object.shade_smooth()
 
@@ -81,7 +92,9 @@ def light(name, kind, energy, loc):
     o.rotation_euler = (Vector((0, 0, 0)) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
     bpy.context.scene.collection.objects.link(o)
 
-light("key", "SUN", 4.0, (-3, -4, 3))
+# The key comes from the side so the relief casts shade: a frontal light
+# lights every surface alike and the features vanish.
+light("key", "SUN", 4.0, (-4, -1.5, 2.5))
 light("fill", "SUN", 0.25, (4, -3, 0))
 light("rim", "SUN", 2.5, (1, 4, 2))
 
