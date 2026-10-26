@@ -117,6 +117,15 @@ var wedgeShapes = func() map[rune]uint32 {
 // most even-toned groups, the brighter one drawn as the glyph.
 func wedgeCell(c cell) string {
 	px, as := c.grid(4, 6)
+	// An unlit cell stays empty: else the full block wins on the faint glow
+	// round the picture and paints it a near-black box.
+	lit := false
+	for _, p := range px {
+		lit = lit || p.r+p.g+p.b > 12
+	}
+	if !lit {
+		return " "
+	}
 	best, bestE := ' ', math.Inf(1)
 	for r, m := range wedgeShapes {
 		var in, out, nin, nout float64
