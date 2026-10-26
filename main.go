@@ -1,8 +1,12 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s style (braille, ascii, pixel, image), 1-8 state, h next head (statue mode), e eye shape, f eyes
-// on/off, r turn the statue, c cycle states, space pause, q quit.
+// Keys: s style (braille, ascii, pixel, image), 1-8 state, h next head
+// (statue mode), e eye shape, f eyes on/off, r turn the statue, c cycle
+// states, space pause, q quit.
+//
+// `lumiases -follow` takes its state from Claude Code, whose hooks run
+// `lumiases hook` (hooks.go).
 package main
 
 import (
@@ -66,8 +70,13 @@ func stty(args ...string) (string, error) {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "hook" {
+		runHook(os.Stdin, statePath())
+		return
+	}
 	style := flag.String("style", "braille", "braille | ascii | pixel | image (Ghostty, kitty, WezTerm)")
 	state := flag.String("state", "", "fixed state (idle, thinking, reading, editing, running, waiting, error, done); empty cycles through all")
+	follow := flag.Bool("follow", false, "follow Claude Code: take the state its hooks record (see `lumiases hook` in the README)")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
 	var facePaths pathList
@@ -94,7 +103,8 @@ func main() {
 		head, face = 1, heads[0]
 	}
 
-	cur, cycle, eyesOn, spinOn := 0, *state == "", true, false
+	cur, cycle, eyesOn, spinOn := 0, *state == "" && !*follow, true, false
+	var seen time.Time // when the followed state last changed
 	for i, s := range states {
 		if s.name == *state {
 			cur = i
@@ -152,6 +162,22 @@ func main() {
 			continue
 		}
 		t += dt
+		if *follow && n%5 == 0 { // the file is tiny, but 6 checks a second are plenty
+			if s, at, ok := readState(statePath()); ok {
+				if !at.Equal(seen) {
+					seen = at
+					for i, st := range states {
+						if st.name == s {
+							cur = i
+						}
+					}
+				}
+				// Done celebrates, then rests until Claude does something else.
+				if states[cur].name == "done" && time.Since(at) > 5*time.Second {
+					cur = 0
+				}
+			}
+		}
 		if cycle && t-cycleAt > 4 {
 			cur, cycleAt = (cur+1)%len(states), t
 		}
