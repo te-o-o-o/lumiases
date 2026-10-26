@@ -147,6 +147,19 @@ is told apart from greenery. `-crop` keeps a part of
 each picture, as `x0,y0,x1,y1` fractions. No photo ships with lumiases: the
 Metropolitan Museum's open-access pictures (CC0) are a good source.
 
+## Intro
+
+At start, lumiases plays the GIFs in its intro folder, in name order, then
+goes on to the orb; any key skips them. The folder is `lumiases/intro` in the
+user config folder (macOS `~/Library/Application Support`, Linux
+`~/.config`, Windows `%AppData%`), or the one given with `-intro`:
+
+```
+lumiases -intro ~/my-gifs
+```
+
+Each GIF plays once, looped up to at least 2.5 s, drawn in the current style.
+
 ## Development
 
 ```

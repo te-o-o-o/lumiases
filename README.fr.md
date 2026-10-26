@@ -150,6 +150,21 @@ une partie de chaque image, en fractions `x0,y0,x1,y1`. Aucune photo n'est
 fournie avec lumiases : les images en accès libre du Metropolitan Museum (CC0)
 sont une bonne source.
 
+## Intro
+
+Au lancement, lumiases joue les GIF de son dossier d'intro, par ordre de nom,
+puis passe à l'orbe ; n'importe quelle touche les saute. Le dossier est
+`lumiases/intro` dans le dossier de configuration de l'utilisateur (macOS
+`~/Library/Application Support`, Linux `~/.config`, Windows `%AppData%`), ou
+celui donné avec `-intro` :
+
+```
+lumiases -intro ~/mes-gifs
+```
+
+Chaque GIF est joué une fois, en boucle jusqu'à au moins 2,5 s, dans le style
+choisi.
+
 ## Développement
 
 ```

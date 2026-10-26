@@ -84,6 +84,7 @@ func main() {
 	flag.StringVar(&form, "form", "orb", "the agent's shape: "+strings.Join(forms, " | "))
 	var facePaths pathList
 	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over (best a PNG with its background removed), or a folder of frames from tools/turntable.py; repeat it, or list photos after the flags, and h switches between them and the orb")
+	intro := flag.String("intro", introDir(), "folder of GIFs played in name order at start; any key skips them")
 	cropArg := flag.String("crop", "0,0,1,1", "statue mode: part of each photo to keep, as x0,y0,x1,y1 fractions")
 	flag.Parse()
 
@@ -113,6 +114,12 @@ func main() {
 		head, face = len(forms), heads[0]
 	}
 
+	clips, err := introClips(*intro)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	cur, cycle, eyesOn, spinOn := 0, *state == "" && !*follow, true, false
 	var seen time.Time // when the followed state last changed
 	for i, s := range states {
@@ -136,6 +143,10 @@ func main() {
 		now := <-tick.C
 		dt := now.Sub(last).Seconds()
 		last = now
+		if len(clips) > 0 && len(kb) > 0 { // any key skips the intro
+			<-kb
+			clips = nil
+		}
 		for len(kb) > 0 {
 			switch k := <-kb; {
 			case k == 'q' || k == 3: // 3 = ctrl-c, which raw mode delivers as a byte
@@ -176,6 +187,15 @@ func main() {
 		}
 		if paused {
 			continue
+		}
+		clip = nil
+		if len(clips) > 0 {
+			if clipT += dt; clipT > clips[0].length() {
+				clips, clipT = clips[1:], 0
+			}
+			if len(clips) > 0 {
+				clip = clips[0]
+			}
 		}
 		t += dt
 		if *follow && n%5 == 0 { // the file is tiny, but 6 checks a second are plenty
