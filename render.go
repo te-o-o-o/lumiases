@@ -147,12 +147,13 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 					c, a, d := at(fx-0.25+0.5*float64(dx), fy-0.375+0.25*float64(dy))
 					sum = rgb{sum.r + c.r/8, sum.g + c.g/8, sum.b + c.b/8}
 					gx, gy := 2*i+dx, 4*j+dy
-					// A thin rim keeps the silhouette crisp; dust is lit on top.
-					rim := math.Abs(d-1) < 0.45/scale
 					if s := sp[gy*gw+gx]; s > a {
 						a = s
 					}
 					lum += a / 8
+					// A thin rim, every other dot, keeps the silhouette without
+					// drawing a hard line; dust is lit on top.
+					rim := math.Abs(d-1) < 0.45/scale && dither(gx, gy) < 0.5
 					if rim || math.Pow(a, 0.7) > dither(gx, gy) {
 						mask |= bits[k]
 					}

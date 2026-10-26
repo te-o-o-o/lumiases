@@ -123,6 +123,8 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	// Eyes use the warped coordinates, so they wobble with the matter.
 	k, g := eyes(wx/p.size, wy/p.size, t, p.eyes)
 	i = math.Max(i*(1-0.95*k), g)
+	// The rim softens into the halo rather than stopping dead.
+	i = lerp(0.18, i, smoothstep(1, 0.9, d))
 	return lerpC(c, rgb{255, 255, 255}, math.Max(0.7*spec, 0.6*g)), i, d
 }
 
