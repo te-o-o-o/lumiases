@@ -28,14 +28,9 @@ func TestEaseReachesTarget(t *testing.T) {
 
 func TestFormsCoverStatesAndStayInside(t *testing.T) {
 	defer func() { form = "orb" }()
-	for _, s := range states {
-		if _, ok := stateAgent[s.name]; !ok {
-			t.Errorf("state %s has no stateAgent entry", s.name)
-		}
-	}
 	for _, form = range forms {
 		p := states[0].p
-		p.agent, p.eyes, p.statue = stateAgent["idle"], stateEyes["idle"], stateStatue["idle"]
+		p.eyes, p.statue = stateEyes["idle"], stateStatue["idle"]
 		p.mood[mIdle], p.eyes.shown = 1, 1
 		// Dots and lines leave gaps: some point near the centre must be lit.
 		lit := 0.0

@@ -11,7 +11,6 @@ type params struct {
 	center, mid, edge                    rgb
 	eyes                                 eyeParams
 	statue                               statueParams
-	agent                                agentParams
 	mood                                 [8]float64 // each state's weight, see scenes.go
 }
 
@@ -42,7 +41,7 @@ func ease(a, b params, k float64) params {
 		amp: lerp(a.amp, b.amp, k), speed: lerp(a.speed, b.speed, k), warp: lerp(a.warp, b.warp, k),
 		shake: lerp(a.shake, b.shake, k), pulse: lerp(a.pulse, b.pulse, k), size: lerp(a.size, b.size, k),
 		center: lerpC(a.center, b.center, k), mid: lerpC(a.mid, b.mid, k), edge: lerpC(a.edge, b.edge, k),
-		eyes: a.eyes.ease(b.eyes, k), statue: a.statue.ease(b.statue, k), agent: a.agent.ease(b.agent, k),
+		eyes: a.eyes.ease(b.eyes, k), statue: a.statue.ease(b.statue, k),
 	}
 	for i := range out.mood {
 		out.mood[i] = lerp(a.mood[i], b.mood[i], k)
@@ -90,25 +89,15 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 		return sampleFace(x, y, t, ph, p)
 	}
 	switch form {
-	case "tendrils":
-		return tendrils(x, y, t, ph, p)
-	case "eye":
-		return bigEye(x, y, t, ph, p)
-	case "hood":
-		return hood(x, y, t, ph, p)
 	case "swarm":
 		return swarm(x, y, t, ph, p)
-	case "blackhole":
-		return blackHole(x, y, t, ph, p)
 	case "pulsar":
 		return pulsar(x, y, t, ph, p)
-	case "mask":
-		return mask(x, y, t, ph, p)
 	}
 	return orb(x, y, t, ph, p)
 }
 
-// orb is the living blob, the default form and the core of the others.
+// orb is the living blob, the default form.
 func orb(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	// Error trembles instead of growing thorns.
 	x += p.shake * math.Sin(t*53)

@@ -1,8 +1,8 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s next style, 1-8 state, h next shape (orb, swarm, blackhole,
-// pulsar, mask, tendrils, eye, hood, then the heads), +/- zoom, e eye shape, f eyes on/off, r turn the statue, c cycle
+// Keys: s next style, 1-8 state, h next shape (orb, swarm,
+// pulsar, then the heads), +/- zoom, e eye shape, f eyes on/off, r turn the statue, c cycle
 // states, space pause, q quit.
 //
 // `lumiases -follow` takes its state from Claude Code, whose hooks run
@@ -199,7 +199,7 @@ func main() {
 		}
 		k := 1 - math.Exp(-dt*3) // ~300 ms morph between states
 		want := states[cur].p
-		want.eyes, want.statue, want.agent = stateEyes[states[cur].name], stateStatue[states[cur].name], stateAgent[states[cur].name]
+		want.eyes, want.statue = stateEyes[states[cur].name], stateStatue[states[cur].name]
 		want.mood[cur] = 1
 		p = ease(p, want, k)
 		p.eyes.shown = lerp(p.eyes.shown, map[bool]float64{true: 1}[eyesOn], k)
