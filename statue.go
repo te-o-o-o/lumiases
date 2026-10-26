@@ -24,7 +24,7 @@ type statueParams struct {
 }
 
 var stateStatue = map[string]statueParams{
-	"idle":     {look: 0.3},
+	"idle":     {look: 0.12},
 	"thinking": {roll: 0.08, rise: 1, frown: 0.6},
 	"reading":  {sweep: 1, look: 0.18},
 	"editing":  {glitch: 0.4},
@@ -244,7 +244,7 @@ func burst(t float64, st statueParams) float64 {
 	if face != nil && face.frames != nil {
 		turn = 0 // rendered heads have their true profile to show
 	}
-	return math.Max(turn, 4*st.blast*(1-st.blast))
+	return math.Max(turn, 2*st.blast*(1-st.blast)) // a done blast peaks at half a burst
 }
 
 // sampleFace is sample for statue mode: the features hold still while the
@@ -287,7 +287,7 @@ func sampleFace(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	// more of them are gone the closer the head is to profile.
 	b := burst(t, st)
 	if b > 0 {
-		ci, cj := int(math.Floor(sx/0.14)), int(math.Floor(sy/0.14))
+		ci, cj := int(math.Floor(sx/0.08)), int(math.Floor(sy/0.08))
 		if hash(ci+5000, cj) < 0.25*b {
 			return p.edge, 0, 2
 		}
