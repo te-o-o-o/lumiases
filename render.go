@@ -161,24 +161,34 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 
 	if style == "image" {
 		// A real picture through the kitty graphics protocol (Ghostty, kitty,
-		// WezTerm): 4×8 pixels per cell, roughly square. Alpha carries the
-		// brightness so the terminal's own background shows through.
-		const sx, sy = 4, 8
-		pw, pht := w*sx, rows*sy
+		// WezTerm), kept stylised on purpose: at full resolution the orb read
+		// as a photo. 2×4 big pixels per cell, each a 2×2 square with a
+		// 1-pixel gap around it, and brightness in 6 steps like pixel art.
+		// Alpha carries the brightness so the terminal's background shows.
+		const sx, sy, bs = 2, 4, 3
+		pw, pht := w*sx*bs, rows*sy*bs
 		pix := make([]byte, pw*pht*4)
 		var wg sync.WaitGroup
-		for y := 0; y < pht; y++ {
+		for y := 0; y < rows*sy; y++ {
 			wg.Add(1)
 			go func(y int) {
 				defer wg.Done()
-				for x := 0; x < pw; x++ {
+				for x := 0; x < w*sx; x++ {
 					c, a, _ := at((float64(x)+0.5)/sx, (float64(y)+0.5)/sy)
-					if sk := sp[(y/2)*gw+x/2]; sk > a {
+					if sk := sp[(y*4/sy)*gw+x*2/sx]; sk > a {
 						a, c = sk, dust
 					}
-					o := (y*pw + x) * 4
-					pix[o], pix[o+1], pix[o+2] = byte(math.Min(c.r, 255)), byte(math.Min(c.g, 255)), byte(math.Min(c.b, 255))
-					pix[o+3] = byte(255 * math.Pow(math.Min(a, 1), 0.8))
+					al := byte(255 * math.Round(5*math.Pow(math.Min(a, 1), 0.8)) / 5)
+					if al == 0 {
+						continue
+					}
+					for dy := 0; dy < bs-1; dy++ {
+						for dx := 0; dx < bs-1; dx++ {
+							o := ((y*bs+dy)*pw + x*bs + dx) * 4
+							pix[o], pix[o+1], pix[o+2] = byte(math.Min(c.r, 255)), byte(math.Min(c.g, 255)), byte(math.Min(c.b, 255))
+							pix[o+3] = al
+						}
+					}
 				}
 			}(y)
 		}
