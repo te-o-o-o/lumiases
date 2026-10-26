@@ -140,8 +140,10 @@ Give photos of statues with `-face` (repeat it) or after the flags; `h` goes
 from one head to the next and back to the orb, `r` turns the head round.
 Best is a PNG with the background removed (macOS: Preview or Photos,
 "Remove Background", or `swift tools/cutout.swift photo.jpg heads/bust.png 0 0 1 0.7`
-to cut out and keep the top 70 %); without transparency, the statue is told apart by
-colour, which only works for warm stone on greenery. `-crop` keeps a part of
+to cut out and keep the top 70 %); without transparency, a plain background
+(white or any even colour, read from the picture's border) is keyed out, a dark
+drawing on a light page has its ink turned into light, and otherwise warm stone
+is told apart from greenery. `-crop` keeps a part of
 each picture, as `x0,y0,x1,y1` fractions. No photo ships with lumiases: the
 Metropolitan Museum's open-access pictures (CC0) are a good source.
 

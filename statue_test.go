@@ -49,6 +49,29 @@ func TestLoadFaceKeysWarmStoneOnGreen(t *testing.T) {
 	}
 }
 
+func TestLoadFaceKeysAPlainBackgroundAndInvertsInk(t *testing.T) {
+	white, ink := color.RGBA{250, 250, 250, 255}, color.RGBA{30, 30, 30, 255}
+	path := writePNG(t, 200, 200, func(x, y int) color.Color {
+		if y > 185 { // a watermark band along one edge
+			return ink
+		}
+		if (x-100)*(x-100)+(y-100)*(y-100) < 50*50 {
+			return ink
+		}
+		return white
+	})
+	f, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l, m := f.at(0.5, 0.5); m < 0.9 || l < 0.5 {
+		t.Errorf("the ink should be the subject, and lit: mask %.2f, light %.2f", m, l)
+	}
+	if _, m := f.at(0.05, 0.05); m > 0.1 {
+		t.Errorf("the white page should be background, mask = %.2f", m)
+	}
+}
+
 func TestLoadFaceRefusesAPictureWithoutStatue(t *testing.T) {
 	path := writePNG(t, 64, 64, func(x, y int) color.Color { return color.RGBA{60, 140, 50, 255} })
 	if _, err := loadFace(path, [4]float64{0, 0, 1, 1}, nil); err == nil {

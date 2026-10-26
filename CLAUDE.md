@@ -49,6 +49,7 @@ to PNG on macOS.
   neither showed until a capture was looked at.
 - `eyeStyle` and `face` are globals read concurrently by the row goroutines:
   set them only between frames.
-- The statue key only finds warm stone on green; anything else fails with
-  "no statue found".
+- Without transparency, a picture is keyed by its border: an even border is
+  the background, else the old warm-stone-on-green key; a busy border on
+  anything else fails with "no subject found".
 - Docs come in pairs: `README.md` / `README.fr.md`, `docs/notes.md` / `docs/notes.fr.md`.

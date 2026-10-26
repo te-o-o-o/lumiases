@@ -118,7 +118,7 @@ func loadFace(path string, crop [4]float64, tone *[3]float64) (*faceImg, error) 
 	step := max(1, max(x1-x0, y1-y0)/360)
 	fi := &faceImg{w: (x1 - x0) / step, h: (y1 - y0) / step}
 	lum, mask := make([]float64, fi.w*fi.h), make([]float64, fi.w*fi.h)
-	var stone []float64
+	cols := make([][3]float64, fi.w*fi.h)
 	for j := 0; j < fi.h; j++ {
 		for i := 0; i < fi.w; i++ {
 			var r, g, bl, al float64 // box sums of the step×step block
@@ -137,16 +137,34 @@ func loadFace(path string, crop [4]float64, tone *[3]float64) (*faceImg, error) 
 			} else {
 				n := float64(step*step) * 65535
 				r, g, bl = r/n, g/n, bl/n
-				mask[k] = smoothstep(0.04, 0.12, r-g)
+				cols[k] = [3]float64{r, g, bl}
 			}
 			lum[k] = 0.299*r + 0.587*g + 0.114*bl
-			if mask[k] > 0.5 {
-				stone = append(stone, lum[k])
-			}
+		}
+	}
+	if !cutOut {
+		keyBackground(cols, mask, fi.w, fi.h)
+	}
+	var stone []float64
+	ink := 0.0
+	for k, m := range mask {
+		if m > 0.5 {
+			stone = append(stone, lum[k])
+			ink += lum[k]
+		}
+	}
+	// A dark drawing on a light page (ink, a tattoo design) would come out
+	// nearly black: the ink becomes the light instead.
+	if !cutOut && len(stone) > 0 && ink/float64(len(stone)) < 0.35 {
+		for k := range lum {
+			lum[k] = 1 - lum[k]
+		}
+		for k := range stone {
+			stone[k] = 1 - stone[k]
 		}
 	}
 	if len(stone) < 100 {
-		return nil, fmt.Errorf("%s: no statue found (give a PNG with the background removed, or warm stone on a green background)", path)
+		return nil, fmt.Errorf("%s: no subject found (give a PNG with the background removed, or a picture on a plain background)", path)
 	}
 	// The range ignores the 2% extremes.
 	if tone == nil || tone[1] == 0 {
@@ -349,4 +367,43 @@ func sampleFace(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	tex := fbm(x*6+qx*2, y*6-ph*0.5)
 	// Lighter texture than the orb's: it should flow over the face, not hide it.
 	return c, math.Min(1, l*(0.9+0.2*(tex-0.5))*m), 0.5
+}
+
+// keyBackground fills mask for a picture without transparency. A plain
+// background (white, a studio colour) shows as an even border: what differs
+// from the border's colour is the subject. A busy border falls back to the
+// first key, warm stone on green.
+func keyBackground(cols [][3]float64, mask []float64, w, h int) {
+	var border [][3]float64
+	for i := 0; i < w; i++ {
+		border = append(border, cols[i], cols[(h-1)*w+i])
+	}
+	for j := 0; j < h; j++ {
+		border = append(border, cols[j*w], cols[j*w+w-1])
+	}
+	// The median colour, and how much of the border is close to it: a logo
+	// or a watermark band along one edge must not spoil the key.
+	var bg [3]float64
+	for i := range bg {
+		ch := make([]float64, len(border))
+		for k, c := range border {
+			ch[k] = c[i]
+		}
+		sort.Float64s(ch)
+		bg[i] = ch[len(ch)/2]
+	}
+	dist := func(c [3]float64) float64 { return math.Abs(c[0]-bg[0]) + math.Abs(c[1]-bg[1]) + math.Abs(c[2]-bg[2]) }
+	even := 0.0
+	for _, c := range border {
+		if dist(c) < 0.1 {
+			even += 1 / float64(len(border))
+		}
+	}
+	for k, c := range cols {
+		if even > 0.7 {
+			mask[k] = smoothstep(0.1, 0.25, dist(c))
+		} else {
+			mask[k] = smoothstep(0.04, 0.12, c[0]-c[1])
+		}
+	}
 }
