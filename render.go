@@ -85,6 +85,57 @@ func bestGlyph(s [8]float64) rune {
 	return best
 }
 
+// quadrants are the block glyphs by which quarters they fill: bit 0 top
+// left, 1 top right, 2 bottom left, 3 bottom right.
+var quadrants = []rune(" ▘▝▀▖▌▞▛▗▚▐▜▄▙▟█")
+
+// quadCell draws 4 pixels in one cell. A cell shows only two colours, the
+// glyph's and its background's, so the pixels are split into the two groups
+// that lose the least colour. Unlit pixels keep the terminal's own
+// background, so the picture has no dark box around it.
+func quadCell(px [4]rgb) string {
+	lit := func(c rgb) bool { return c.r+c.g+c.b > 12 }
+	mean := func(m int) (c rgb, n float64) {
+		for k, p := range px {
+			if m>>k&1 == 1 {
+				c, n = rgb{c.r + p.r, c.g + p.g, c.b + p.b}, n+1
+			}
+		}
+		if n > 0 {
+			c = rgb{c.r / n, c.g / n, c.b / n}
+		}
+		return c, n
+	}
+	best, bestE := 15, math.Inf(1)
+	for m := 1; m < 16; m++ {
+		f, _ := mean(m)
+		b, _ := mean(15 ^ m)
+		e := 0.0
+		for k, p := range px {
+			q := b
+			if m>>k&1 == 1 {
+				q = f
+			}
+			e += (p.r-q.r)*(p.r-q.r) + (p.g-q.g)*(p.g-q.g) + (p.b-q.b)*(p.b-q.b)
+		}
+		if e < bestE {
+			best, bestE = m, e
+		}
+	}
+	f, _ := mean(best)
+	b, nb := mean(15 ^ best)
+	if !lit(f) && nb > 0 && lit(b) { // ink on the lit side, never the dark one
+		best, f, b = 15^best, b, f
+	}
+	switch {
+	case !lit(f):
+		return " "
+	case nb == 0 || !lit(b):
+		return fg(f, 1) + string(quadrants[best])
+	}
+	return fg(f, 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm%c\x1b[49m", int(b.r), int(b.g), int(b.b), quadrants[best])
+}
+
 // frame draws one picture of w×h cells, the last row being the label, and
 // returns it as one write: synchronized output keeps it from tearing.
 func frame(w, h int, t, ph float64, p params, style, label string) string {
@@ -116,30 +167,18 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 			for i := 0; i < w; i++ {
 				fx, fy := float64(i)+0.5, float64(j)+0.5
 				if style == "pixel" {
-					// Two pixels per cell, the top in the glyph's colour and the
-					// bottom in the background's: fewer points than braille, but
-					// each carries its own colour, so gradients stay smooth.
-					var px [2]rgb
+					var px [4]rgb // top left, top right, bottom left, bottom right
 					for k := range px {
-						c, a, _ := at(fx, fy-0.25+0.5*float64(k))
-						gy := 4*j + 2*k
-						if sk := math.Max(sp[gy*gw+2*i], sp[(gy+1)*gw+2*i+1]); sk > a {
+						dx, dy := k%2, k/2
+						c, a, _ := at(fx-0.25+0.5*float64(dx), fy-0.25+0.5*float64(dy))
+						gx, gy := 2*i+dx, 4*j+2*dy
+						if sk := math.Max(sp[gy*gw+gx], sp[(gy+1)*gw+gx]); sk > a {
 							a, c = sk, dust
 						}
 						a = math.Pow(a, 0.8)
 						px[k] = rgb{c.r * a, c.g * a, c.b * a}
 					}
-					lit := func(c rgb) bool { return c.r+c.g+c.b > 12 }
-					switch top, bot := lit(px[0]), lit(px[1]); {
-					case top && bot:
-						sb.WriteString(fg(px[0], 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm▀\x1b[49m", int(px[1].r), int(px[1].g), int(px[1].b)))
-					case top:
-						sb.WriteString(fg(px[0], 1) + "▀")
-					case bot:
-						sb.WriteString(fg(px[1], 1) + "▄")
-					default:
-						sb.WriteByte(' ')
-					}
+					sb.WriteString(quadCell(px))
 					continue
 				}
 				if style == "ascii" {

@@ -35,3 +35,16 @@ func TestBestGlyphFollowsShape(t *testing.T) {
 		}
 	}
 }
+
+func TestQuadCellSplitsLitFromDark(t *testing.T) {
+	w, k := rgb{200, 200, 200}, rgb{}
+	if got := quadCell([4]rgb{w, w, k, k}); !strings.HasSuffix(got, "▀") || strings.Contains(got, "48;2") {
+		t.Errorf("lit top over dark bottom: got %q, want ▀ on the terminal's background", got)
+	}
+	if got := quadCell([4]rgb{k, w, w, k}); !strings.HasSuffix(got, "▞") {
+		t.Errorf("lit diagonal: got %q, want ▞", got)
+	}
+	if got := quadCell([4]rgb{k, k, k, k}); got != " " {
+		t.Errorf("dark cell: got %q, want a space", got)
+	}
+}
