@@ -25,6 +25,10 @@ func fg(c rgb, a float64) string {
 // an orb; few steps means little flicker as the noise moves.
 var ramp = []rune(" .·:;=+*xoO#%@")
 
+// styleNames is the order s steps through.
+var styleNames = []string{"braille", "ascii", "pixel", "octant", "sextant", "wedge", "shade", "bars",
+	"halftone", "contour", "engrave", "matrix", "geometric", "image"}
+
 // glyphShapes says where each glyph puts its ink in a cell cut into 2
 // columns by 4 rows (left then right, top row first), in tenths. ASCII
 // samples the same 2x4 grid as braille and takes the glyph whose shape is
@@ -138,11 +142,19 @@ func blockCell(px []rgb, table []rune) string {
 		}
 	}
 	f = rgb{f.r / nf, f.g / nf, f.b / nf}
-	if nb == 0 || lo <= 12 {
-		return fg(f, 1) + string(table[mask])
+	if nb > 0 {
+		b = rgb{b.r / nb, b.g / nb, b.b / nb}
 	}
-	b = rgb{b.r / nb, b.g / nb, b.b / nb}
-	return fg(f, 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm%c\x1b[49m", int(b.r), int(b.g), int(b.b), table[mask])
+	return twoTone(f, b, table[mask])
+}
+
+// twoTone prints r in colour f on background b; a dark b keeps the
+// terminal's own background.
+func twoTone(f, b rgb, r rune) string {
+	if b.r+b.g+b.b <= 12 {
+		return fg(f, 1) + string(r)
+	}
+	return fg(f, 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm%c\x1b[49m", int(b.r), int(b.g), int(b.b), r)
 }
 
 // frame draws one picture of w×h cells, the last row being the label, and
@@ -213,6 +225,16 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 			var sb strings.Builder
 			for i := 0; i < w; i++ {
 				fx, fy := float64(i)+0.5, float64(j)+0.5
+				if draw, ok := cellStyles[style]; ok {
+					sb.WriteString(draw(cell{i: i, j: j, t: t, at: func(u, v float64) (rgb, float64) {
+						c, a, _ := at(float64(i)+u, float64(j)+v)
+						if sk := sp[(4*j+min(int(v*4), 3))*gw+2*i+min(int(u*2), 1)]; sk > a {
+							return dust, sk
+						}
+						return c, a
+					}}))
+					continue
+				}
 				if style == "pixel" || style == "octant" {
 					// Pixels per cell: 2×2 drawn with quadrants, or 2×4 with
 					// octants, braille's grid in solid blocks.

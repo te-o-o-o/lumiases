@@ -15,6 +15,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `statue.go` | `statueParams`, `stateStatue`, photo loading and keying, `sampleFace` | Effects bend where the photo is read, never the photo. |
 | `render.go` | `frame`: braille dithering, ASCII glyph matching, quarter-block and octant pixels, kitty-protocol images | One goroutine per row; one write per frame inside synchronized output. |
 | `hooks.go` | `lumiases hook` (Claude Code event → state file) and `readState` for `-follow` | The hook never fails and never waits: bad input leaves the state alone, exit 0. |
+| `styles.go` | The looks drawn one cell at a time (`cellStyles`): sextant, wedge, shade, bars, halftone, contour, engrave, matrix, geometric | A style reads its cell through `cell.at`; adding one is an entry in `cellStyles` and `styleNames`. |
 | `term_unix.go`, `term_windows.go` | `ttySize` | Windows has none yet. |
 | `tools/cutout.swift` | Cuts a statue out of a photo into a transparent PNG (macOS Vision) | A helper to prepare heads, outside the Go build; heads live in the ignored `heads/`. |
 
