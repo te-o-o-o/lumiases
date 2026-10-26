@@ -250,8 +250,11 @@ func burst(t float64, st statueParams) float64 {
 // sampleFace is sample for statue mode: the features hold still while the
 // matter churns over them in the state's colours.
 func sampleFace(x, y, t, ph float64, p params) (rgb, float64, float64) {
-	const H = 2.6 // picture height in orb units; the view spans about ±1.5, the rest is room to sway
+	// Picture height in orb units: the view spans about ±1.5, the rest is
+	// room to sway. A wide picture is fitted by its width instead, or it
+	// would spill off the sides.
 	a := face.aspect()
+	H := 2.6 / math.Max(1, a)
 	sx, sy := x, y // screen position, for effects that stay put (light bands)
 	st := p.statue
 
