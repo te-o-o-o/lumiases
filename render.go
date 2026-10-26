@@ -228,7 +228,10 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 				if draw, ok := cellStyles[style]; ok {
 					sb.WriteString(draw(cell{i: i, j: j, t: t, at: func(u, v float64) (rgb, float64) {
 						c, a, _ := at(float64(i)+u, float64(j)+v)
-						if sk := sp[(4*j+min(int(v*4), 3))*gw+2*i+min(int(u*2), 1)]; sk > a {
+						// Styles may read a little past their cell (engrave does,
+						// for a steadier slope): dust is looked up in the cell.
+						dy, dx := max(0, min(int(v*4), 3)), max(0, min(int(u*2), 1))
+						if sk := sp[(4*j+dy)*gw+2*i+dx]; sk > a {
 							return dust, sk
 						}
 						return c, a

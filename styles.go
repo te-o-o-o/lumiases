@@ -197,7 +197,9 @@ func barsCell(c cell) string {
 // not as print). An octant pixel is lit when it falls inside its screen
 // dot, whose area is the brightness: radius² · π = a, on a unit screen cell.
 func halftoneCell(c cell) string {
-	const period = 6.0 // pixels between screen dots
+	// Pixels between screen dots: a finer screen than print would use, as
+	// a terminal has few pixels and a coarse one hides a face.
+	const period = 3.5
 	var mask int
 	var sum rgb
 	lum := 0.0
@@ -227,8 +229,16 @@ func contourCell(c cell) string {
 	total := 0.0
 	lo := 99
 	for k := range band {
-		col, a := c.at(float64(k%2), float64(k/2))
-		band[k] = int(math.Min(a, 0.999) * 6)
+		// Each corner averages a small neighbourhood: the stone's grain
+		// would otherwise draw a ring round every speck.
+		u, v := float64(k%2), float64(k/2)
+		col, a := c.at(u, v)
+		for _, o := range [][2]float64{{-0.6, 0}, {0.6, 0}, {0, -0.6}, {0, 0.6}, {-0.4, -0.4}, {0.4, 0.4}, {-0.4, 0.4}, {0.4, -0.4}} {
+			_, b := c.at(u+o[0], v+o[1])
+			a += b
+		}
+		a /= 9
+		band[k] = int(math.Min(a, 0.999) * 4)
 		lo = min(lo, band[k])
 		sum, total = rgb{sum.r + col.r/4, sum.g + col.g/4, sum.b + col.b/4}, total+a/4
 	}
@@ -247,20 +257,22 @@ func contourCell(c cell) string {
 	if r == 0 {
 		return " "
 	}
-	return fg(vivid(sum), 0.4+0.6*math.Min(1, total+0.2)) + string(r)
+	return fg(vivid(sum), 0.3+0.7*math.Min(1, total*1.2)) + string(r)
 }
 
 // engraveCell hatches along the forms, the way an engraving follows a face:
 // strokes run across the brightness gradient, crossed where the light is
 // flat and strong.
 func engraveCell(c cell) string {
-	_, as := c.grid(2, 2)
 	col, a := c.mean()
-	if a < 0.12 {
+	if a < 0.08 || math.Pow(a, 0.8) < dither(c.i, c.j) {
 		return " "
 	}
-	gx := (as[1] + as[3] - as[0] - as[2]) / 2
-	gy := (as[2] + as[3] - as[0] - as[1]) / 2
+	// The slope is read across the neighbouring cells too: within one cell
+	// the stone's texture outweighs the form and the strokes go every way.
+	read := func(u, v float64) float64 { _, a := c.at(u, v); return a }
+	gx := (read(1.5, 0.5) - read(-0.5, 0.5)) / 2
+	gy := (read(0.5, 1.5) - read(0.5, -0.5)) / 2
 	var r rune
 	switch {
 	case math.Hypot(gx, gy) < 0.04:
@@ -269,7 +281,11 @@ func engraveCell(c cell) string {
 		// The stroke runs along the contour, at right angles to the
 		// gradient; a cell is twice as tall as wide, so y counts double.
 		ang := math.Mod(math.Atan2(gx, -gy*2)+2*math.Pi, math.Pi)
-		r = []rune{'─', '╲', '│', '╱'}[int(math.Round(ang/(math.Pi/4)))%4]
+		dir := int(math.Round(ang/(math.Pi/4))) % 4
+		r = []rune{'─', '╲', '│', '╱'}[dir]
+		if a > 0.65 && dir%2 == 0 { // the light cuts deeper: heavy strokes
+			r = []rune{'━', '╲', '┃', '╱'}[dir]
+		}
 	}
 	return fg(vivid(col), 0.35+0.65*a) + string(r)
 }
@@ -280,7 +296,9 @@ var katakana = []rune("ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆ
 // scrolls at its own speed, a bright head and a fading trail.
 func matrixCell(c cell) string {
 	col, a := c.mean()
-	if a < 0.06 {
+	// Like braille, brightness thins the glyphs out, not only their colour:
+	// a dim area keeps a few drops, a lit one is full.
+	if a < 0.06 || math.Pow(a, 0.8) < dither(c.i, c.j) {
 		return " "
 	}
 	pos := c.t*(4+8*hash(c.i, 0)) + 40*hash(c.i, 1)
@@ -293,7 +311,7 @@ func matrixCell(c cell) string {
 		col = lerpC(vivid(col), rgb{255, 255, 255}, 0.6)
 		return fg(col, 0.6+0.4*a) + string(glyph)
 	}
-	return fg(vivid(col), a*(0.25+0.75*(1-trail))) + string(glyph)
+	return fg(vivid(col), (0.35+0.65*a)*(0.6+0.4*(1-trail))) + string(glyph)
 }
 
 // geometricCell is a mosaic of solid shapes: triangles where an edge cuts
