@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"compress/zlib"
+	"encoding/base64"
 	"fmt"
 	"math"
 	"strings"
@@ -154,6 +157,34 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 		}
 	}
 	dust := lerpC(p.mid, p.center, 0.4)
+	foot := "\x1b[2K" + fg(p.mid, 1) + " ●\x1b[0m\x1b[2m" + label + "\x1b[0m\x1b[?2026l"
+
+	if style == "image" {
+		// A real picture through the kitty graphics protocol (Ghostty, kitty,
+		// WezTerm): 4×8 pixels per cell, roughly square. Alpha carries the
+		// brightness so the terminal's own background shows through.
+		const sx, sy = 4, 8
+		pw, pht := w*sx, rows*sy
+		pix := make([]byte, pw*pht*4)
+		var wg sync.WaitGroup
+		for y := 0; y < pht; y++ {
+			wg.Add(1)
+			go func(y int) {
+				defer wg.Done()
+				for x := 0; x < pw; x++ {
+					c, a, _ := at((float64(x)+0.5)/sx, (float64(y)+0.5)/sy)
+					if sk := sp[(y/2)*gw+x/2]; sk > a {
+						a, c = sk, dust
+					}
+					o := (y*pw + x) * 4
+					pix[o], pix[o+1], pix[o+2] = byte(math.Min(c.r, 255)), byte(math.Min(c.g, 255)), byte(math.Min(c.b, 255))
+					pix[o+3] = byte(255 * math.Pow(math.Min(a, 1), 0.8))
+				}
+			}(y)
+		}
+		wg.Wait()
+		return "\x1b[?2026h\x1b[H" + kittyImage(pix, pw, pht, w, rows) + fmt.Sprintf("\x1b[%d;1H", h) + foot
+	}
 
 	// Rows are independent: one goroutine each keeps braille's 8 samples
 	// per cell inside the frame budget.
@@ -238,5 +269,32 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 	}
 	wg.Wait()
 	return "\x1b[?2026h\x1b[H" + strings.Join(lines, "\x1b[0m\r\n") +
-		"\x1b[0m\r\n\x1b[2K" + fg(p.mid, 1) + " ●\x1b[0m\x1b[2m" + label + "\x1b[0m\x1b[?2026l"
+		"\x1b[0m\r\n" + foot
 }
+
+// kittyImage sends RGBA pixels as image 1, stretched over cols×rows cells,
+// replacing the previous frame in place. zlib keeps a mostly empty frame
+// small; the payload goes in the 4096-byte chunks the protocol requires.
+func kittyImage(pix []byte, pw, ph, cols, rows int) string {
+	var z bytes.Buffer
+	zw, _ := zlib.NewWriterLevel(&z, zlib.BestSpeed)
+	zw.Write(pix)
+	zw.Close()
+	data := base64.StdEncoding.EncodeToString(z.Bytes())
+	var sb strings.Builder
+	for i := 0; i < len(data); i += 4096 {
+		chunk, more := data[i:min(i+4096, len(data))], 0
+		if i+4096 < len(data) {
+			more = 1
+		}
+		if i == 0 {
+			fmt.Fprintf(&sb, "\x1b_Ga=T,f=32,o=z,s=%d,v=%d,c=%d,r=%d,i=1,C=1,q=2,m=%d;%s\x1b\\", pw, ph, cols, rows, more, chunk)
+		} else {
+			fmt.Fprintf(&sb, "\x1b_Gm=%d;%s\x1b\\", more, chunk)
+		}
+	}
+	return sb.String()
+}
+
+// kittyClear removes the picture when leaving the image style.
+const kittyClear = "\x1b_Ga=d,d=A,q=2\x1b\\"

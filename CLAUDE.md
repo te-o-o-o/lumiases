@@ -13,7 +13,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `orb.go` | `params`, the 8 `states`, noise, `sample` (the orb), `sparks` | `sample` works in square units, orb about 1 wide; phase `ph`, not time, drives motion. |
 | `eyes.go` | `eyeParams`, `stateEyes`, the five eye shapes | Eyes return carve and glow; they never draw glyphs themselves. |
 | `statue.go` | `statueParams`, `stateStatue`, photo loading and keying, `sampleFace` | Effects bend where the photo is read, never the photo. |
-| `render.go` | `frame`: braille dithering, ASCII glyph matching, quarter-block pixels | One goroutine per row; one write per frame inside synchronized output. |
+| `render.go` | `frame`: braille dithering, ASCII glyph matching, quarter-block pixels, kitty-protocol images | One goroutine per row; one write per frame inside synchronized output. |
 | `term_unix.go`, `term_windows.go` | `ttySize` | Windows has none yet. |
 | `tools/cutout.swift` | Cuts a statue out of a photo into a transparent PNG (macOS Vision) | A helper to prepare heads, outside the Go build; heads live in the ignored `heads/`. |
 

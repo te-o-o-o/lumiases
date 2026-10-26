@@ -1,7 +1,7 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s style (braille, ascii, pixel), 1-8 state, h next head (statue mode), e eye shape, f eyes
+// Keys: s style (braille, ascii, pixel, image), 1-8 state, h next head (statue mode), e eye shape, f eyes
 // on/off, r turn the statue, c cycle states, space pause, q quit.
 package main
 
@@ -66,7 +66,7 @@ func stty(args ...string) (string, error) {
 }
 
 func main() {
-	style := flag.String("style", "braille", "braille | ascii | pixel")
+	style := flag.String("style", "braille", "braille | ascii | pixel | image (Ghostty, kitty, WezTerm)")
 	state := flag.String("state", "", "fixed state (idle, thinking, reading, editing, running, waiting, error, done); empty cycles through all")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
@@ -104,7 +104,7 @@ func main() {
 
 	kb, restoreTTY := keys()
 	fmt.Print("\x1b[?1049h\x1b[?25l")
-	restore := func() { fmt.Print("\x1b[0m\x1b[?25h\x1b[?1049l"); restoreTTY() }
+	restore := func() { fmt.Print(kittyClear + "\x1b[0m\x1b[?25h\x1b[?1049l"); restoreTTY() }
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() { <-sig; restore(); os.Exit(0) }()
@@ -121,7 +121,8 @@ func main() {
 			case k == 'q' || k == 3: // 3 = ctrl-c, which raw mode delivers as a byte
 				return
 			case k == 's':
-				*style = map[string]string{"braille": "ascii", "ascii": "pixel", "pixel": "braille"}[*style]
+				*style = map[string]string{"braille": "ascii", "ascii": "pixel", "pixel": "image", "image": "braille"}[*style]
+				fmt.Print(kittyClear)
 			case k == 'c':
 				cycle, cycleAt = !cycle, t
 			case k == 'e':

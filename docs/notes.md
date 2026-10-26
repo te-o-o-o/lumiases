@@ -72,6 +72,6 @@ renderer came first.
 
 | System | What |
 |---|---|
-| macOS (Darwin 27), Apple Silicon | Builds, tests pass, both styles and statue mode watched in a terminal, ~30 fps at 200×60 |
+| macOS (Darwin 27), Apple Silicon | Builds, tests pass, every style and statue mode watched in a terminal, ~30 fps at 200×60; the image style watched in Ghostty only (~24 fps at 100×46) |
 | Linux | `GOOS=linux go vet` only; never run |
 | Windows | `GOOS=windows go vet` only; never run. No terminal size (falls back to `COLUMNS`/`LINES`), no keys (no `stty`) |

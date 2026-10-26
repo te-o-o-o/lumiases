@@ -1,6 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"compress/zlib"
+	"encoding/base64"
+	"io"
 	"strings"
 	"testing"
 )
@@ -46,5 +50,36 @@ func TestQuadCellSplitsLitFromDark(t *testing.T) {
 	}
 	if got := quadCell([4]rgb{k, k, k, k}); got != " " {
 		t.Errorf("dark cell: got %q, want a space", got)
+	}
+}
+
+func TestKittyImageRoundTrips(t *testing.T) {
+	pix := make([]byte, 64*40*4)
+	for i := range pix {
+		pix[i] = byte(i * 7)
+	}
+	out := kittyImage(pix, 64, 40, 16, 5)
+	var b64 strings.Builder
+	for _, cmd := range strings.Split(out, "\x1b\\")[:strings.Count(out, "\x1b\\")] {
+		_, payload, _ := strings.Cut(strings.TrimPrefix(cmd, "\x1b_G"), ";")
+		if len(payload) > 4096 {
+			t.Fatalf("chunk of %d bytes, the protocol caps them at 4096", len(payload))
+		}
+		b64.WriteString(payload)
+	}
+	z, err := base64.StdEncoding.DecodeString(b64.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := zlib.NewReader(bytes.NewReader(z))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := io.ReadAll(r)
+	if !bytes.Equal(got, pix) {
+		t.Error("decoded pixels differ from the ones sent")
+	}
+	if strings.Count(out, "m=0;") != 1 {
+		t.Error("the last chunk must say m=0")
 	}
 }
