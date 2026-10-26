@@ -6,7 +6,7 @@ import "math"
 // a sample function with the orb's contract: colour, brightness, and a
 // distance that is 1 on the silhouette's edge (braille draws a rim there)
 // and below 1 where no rim belongs.
-var forms = []string{"orb", "tendrils", "eye", "hood"}
+var forms = []string{"orb", "swarm", "blackhole", "pulsar", "mask", "tendrils", "eye", "hood"}
 
 // form is set from main between frames, read by the row goroutines.
 var form = "orb"

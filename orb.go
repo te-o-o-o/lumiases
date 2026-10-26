@@ -12,6 +12,7 @@ type params struct {
 	eyes                                 eyeParams
 	statue                               statueParams
 	agent                                agentParams
+	mood                                 [8]float64 // each state's weight, see scenes.go
 }
 
 // states are the moods Claude's actions map to; their order is the 1-8 keys.
@@ -37,12 +38,16 @@ func lerpC(a, b rgb, k float64) rgb {
 }
 
 func ease(a, b params, k float64) params {
-	return params{
+	out := params{
 		amp: lerp(a.amp, b.amp, k), speed: lerp(a.speed, b.speed, k), warp: lerp(a.warp, b.warp, k),
 		shake: lerp(a.shake, b.shake, k), pulse: lerp(a.pulse, b.pulse, k), size: lerp(a.size, b.size, k),
 		center: lerpC(a.center, b.center, k), mid: lerpC(a.mid, b.mid, k), edge: lerpC(a.edge, b.edge, k),
 		eyes: a.eyes.ease(b.eyes, k), statue: a.statue.ease(b.statue, k), agent: a.agent.ease(b.agent, k),
 	}
+	for i := range out.mood {
+		out.mood[i] = lerp(a.mood[i], b.mood[i], k)
+	}
+	return out
 }
 
 func smoothstep(e0, e1, x float64) float64 {
@@ -91,6 +96,14 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 		return bigEye(x, y, t, ph, p)
 	case "hood":
 		return hood(x, y, t, ph, p)
+	case "swarm":
+		return swarm(x, y, t, ph, p)
+	case "blackhole":
+		return blackHole(x, y, t, ph, p)
+	case "pulsar":
+		return pulsar(x, y, t, ph, p)
+	case "mask":
+		return mask(x, y, t, ph, p)
 	}
 	return orb(x, y, t, ph, p)
 }
