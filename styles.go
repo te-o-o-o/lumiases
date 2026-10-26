@@ -191,14 +191,31 @@ func barsCell(c cell) string {
 	return fg(vivid(col), 0.5+0.5*a) + string([]rune(" ▁▂▃▄▅▆▇█")[k])
 }
 
-// halftoneCell is a printed photo: one dot per cell, its size the brightness.
+// halftoneCell is a printed photo: round dots on a screen turned 45°, each
+// growing with the light until they touch, like a newspaper's. Drawn in
+// octants, so each dot is a solid patch (braille dots read as dotted lines,
+// not as print). An octant pixel is lit when it falls inside its screen
+// dot, whose area is the brightness: radius² · π = a, on a unit screen cell.
 func halftoneCell(c cell) string {
-	col, a := c.mean()
-	k := int(a * 4.99)
-	if k == 0 {
+	const period = 6.0 // pixels between screen dots
+	var mask int
+	var sum rgb
+	lum := 0.0
+	for k := 0; k < 8; k++ {
+		dx, dy := k%2, k/2
+		col, a := c.at((float64(dx)+0.5)/2, (float64(dy)+0.5)/4)
+		sum, lum = rgb{sum.r + col.r/8, sum.g + col.g/8, sum.b + col.b/8}, lum+math.Min(a, 1)/8
+		x, y := float64(2*c.i+dx), float64(4*c.j+dy)
+		u, v := (x+y)/(period*math.Sqrt2), (x-y)/(period*math.Sqrt2)
+		fu, fv := u-math.Round(u), v-math.Round(v)
+		if 0.75*math.Pow(a, 1.3) > math.Pi*(fu*fu+fv*fv) {
+			mask |= 1 << k
+		}
+	}
+	if mask == 0 {
 		return " "
 	}
-	return fg(vivid(col), 0.55+0.45*a) + string([]rune(" ·∙•●")[k])
+	return fg(vivid(sum), 0.55+0.45*math.Sqrt(lum)) + string(octants[mask])
 }
 
 // contourCell draws only where brightness crosses one of six levels, like
