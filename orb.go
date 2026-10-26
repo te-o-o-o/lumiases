@@ -11,6 +11,7 @@ type params struct {
 	center, mid, edge                    rgb
 	eyes                                 eyeParams
 	statue                               statueParams
+	agent                                agentParams
 }
 
 // states are the moods Claude's actions map to; their order is the 1-8 keys.
@@ -40,7 +41,7 @@ func ease(a, b params, k float64) params {
 		amp: lerp(a.amp, b.amp, k), speed: lerp(a.speed, b.speed, k), warp: lerp(a.warp, b.warp, k),
 		shake: lerp(a.shake, b.shake, k), pulse: lerp(a.pulse, b.pulse, k), size: lerp(a.size, b.size, k),
 		center: lerpC(a.center, b.center, k), mid: lerpC(a.mid, b.mid, k), edge: lerpC(a.edge, b.edge, k),
-		eyes: a.eyes.ease(b.eyes, k), statue: a.statue.ease(b.statue, k),
+		eyes: a.eyes.ease(b.eyes, k), statue: a.statue.ease(b.statue, k), agent: a.agent.ease(b.agent, k),
 	}
 }
 
@@ -83,6 +84,19 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	if face != nil {
 		return sampleFace(x, y, t, ph, p)
 	}
+	switch form {
+	case "tendrils":
+		return tendrils(x, y, t, ph, p)
+	case "eye":
+		return bigEye(x, y, t, ph, p)
+	case "hood":
+		return hood(x, y, t, ph, p)
+	}
+	return orb(x, y, t, ph, p)
+}
+
+// orb is the living blob, the default form and the core of the others.
+func orb(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	// Error trembles instead of growing thorns.
 	x += p.shake * math.Sin(t*53)
 	y += p.shake * 0.6 * math.Sin(t*41)

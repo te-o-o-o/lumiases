@@ -1,8 +1,8 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s next style, 1-8 state, h next head
-// (statue mode), e eye shape, f eyes on/off, r turn the statue, c cycle
+// Keys: s next style, 1-8 state, h next shape (orb, tendrils, eye, hood,
+// then the heads), e eye shape, f eyes on/off, r turn the statue, c cycle
 // states, space pause, q quit.
 //
 // `lumiases -follow` takes its state from Claude Code, whose hooks run
@@ -80,6 +80,7 @@ func main() {
 	follow := flag.Bool("follow", false, "follow Claude Code: take the state its hooks record (see `lumiases hook` in the README)")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
+	flag.StringVar(&form, "form", "orb", "the agent's shape: "+strings.Join(forms, " | "))
 	var facePaths pathList
 	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over (best a PNG with its background removed), or a folder of frames from tools/turntable.py; repeat it, or list photos after the flags, and h switches between them and the orb")
 	cropArg := flag.String("crop", "0,0,1,1", "statue mode: part of each photo to keep, as x0,y0,x1,y1 fractions")
@@ -99,9 +100,16 @@ func main() {
 		}
 		heads, headNames = append(heads, f), append(headNames, strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)))
 	}
-	head := 0 // 0 is the orb, i the heads[i-1]
+	// h steps through the forms, then the heads: head < len(forms) is a
+	// form, beyond it heads[head-len(forms)].
+	head := 0
+	for i, f := range forms {
+		if f == form {
+			head = i
+		}
+	}
 	if len(heads) > 0 {
-		head, face = 1, heads[0]
+		head, face = len(forms), heads[0]
 	}
 
 	cur, cycle, eyesOn, spinOn := 0, *state == "" && !*follow, true, false
@@ -149,9 +157,11 @@ func main() {
 			case k == 'r':
 				spinOn = !spinOn
 			case k == 'h':
-				head, face = (head+1)%(len(heads)+1), nil
-				if head > 0 {
-					face = heads[head-1]
+				head, face = (head+1)%(len(forms)+len(heads)), nil
+				if head < len(forms) {
+					form = forms[head]
+				} else {
+					face = heads[head-len(forms)]
 				}
 			case k == ' ':
 				paused = !paused
@@ -184,7 +194,7 @@ func main() {
 		}
 		k := 1 - math.Exp(-dt*3) // ~300 ms morph between states
 		want := states[cur].p
-		want.eyes, want.statue = stateEyes[states[cur].name], stateStatue[states[cur].name]
+		want.eyes, want.statue, want.agent = stateEyes[states[cur].name], stateStatue[states[cur].name], stateAgent[states[cur].name]
 		p = ease(p, want, k)
 		p.eyes.shown = lerp(p.eyes.shown, map[bool]float64{true: 1}[eyesOn], k)
 		if spin := map[bool]float64{true: 0.8}[spinOn] + p.statue.spin; spin > 0.01 {
@@ -205,12 +215,12 @@ func main() {
 		label := fmt.Sprintf(" %s · %s", states[cur].name, *style)
 		hint := "   s style · 1-8 state · e eye shape · f eyes on/off · c cycle · space pause · q quit"
 		if face != nil {
-			label += " · " + headNames[head-1]
+			label += " · " + headNames[head-len(forms)]
 			hint = "   s style · 1-8 state · r turn · c cycle · space pause · q quit"
+		} else if form != "orb" {
+			label += " · " + form
 		}
-		if len(heads) > 0 {
-			hint = "   h head ·" + strings.TrimPrefix(hint, "  ")
-		}
+		hint = "   h shape ·" + strings.TrimPrefix(hint, "  ")
 		os.Stdout.WriteString(frame(w, h, t, ph, p, *style, label+hint))
 	}
 }

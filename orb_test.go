@@ -22,3 +22,22 @@ func TestEaseReachesTarget(t *testing.T) {
 		t.Errorf("ease(k=0) = %+v, want %+v", got, a)
 	}
 }
+
+func TestFormsCoverStatesAndStayInside(t *testing.T) {
+	defer func() { form = "orb" }()
+	for _, s := range states {
+		if _, ok := stateAgent[s.name]; !ok {
+			t.Errorf("state %s has no stateAgent entry", s.name)
+		}
+	}
+	for _, form = range forms {
+		p := states[0].p
+		p.agent = stateAgent["idle"]
+		if _, i, _ := sample(0.05, 0.4, 1, 1, p); i <= 0 {
+			t.Errorf("%s: should be lit near the centre", form)
+		}
+		if _, i, _ := sample(5, 5, 1, 1, p); i > 0.001 {
+			t.Errorf("%s: far outside should be dark, got %.3f", form, i)
+		}
+	}
+}

@@ -75,6 +75,7 @@ lumiases -style ascii
 lumiases -follow              # suit Claude Code (voir plus bas)
 lumiases -state thinking      # garde un seul état
 lumiases -eyes glasses        # round, slits, void, glasses, shades
+lumiases -form tendrils       # orb, tendrils, eye, hood
 ```
 
 | Touche | Effet |
@@ -82,7 +83,7 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 | `s` | style suivant |
 | `1`–`8` | choisit un état |
 | `c` | relance le défilement des états |
-| `h` | tête suivante, puis retour à l'orbe (mode statue) |
+| `h` | forme suivante : orbe, tentacules, un grand œil, une silhouette encapuchonnée, puis les têtes de statue |
 | `r` | fait tourner la tête (mode statue) |
 | `e` | forme d'yeux suivante |
 | `f` | affiche ou masque les yeux |

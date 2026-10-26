@@ -12,6 +12,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `main.go` | Flags, keys, the 30 fps loop, terminal size | A state's target is `states` + `stateEyes` + `stateStatue`, eased with `ease`. |
 | `orb.go` | `params`, the 8 `states`, noise, `sample` (the orb), `sparks` | `sample` works in square units, orb about 1 wide; phase `ph`, not time, drives motion. |
 | `eyes.go` | `eyeParams`, `stateEyes`, the five eye shapes | Eyes return carve and glow; they never draw glyphs themselves. |
+| `forms.go` | `forms`, `agentParams`, `stateAgent`, the tendrils, eye and hood shapes | Each form keeps `sample`'s contract and builds on `orb`; distance 1 only where a rim belongs. |
 | `statue.go` | `statueParams`, `stateStatue`, photo loading and keying, `sampleFace` | Effects bend where the photo is read, never the photo. |
 | `render.go` | `frame`: braille dithering, ASCII glyph matching, quarter-block and octant pixels, kitty-protocol images | One goroutine per row; one write per frame inside synchronized output. |
 | `hooks.go` | `lumiases hook` (Claude Code event → state file) and `readState` for `-follow` | The hook never fails and never waits: bad input leaves the state alone, exit 0. |
@@ -19,7 +20,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `term_unix.go`, `term_windows.go` | `ttySize` | Windows has none yet. |
 | `tools/cutout.swift` | Cuts a statue out of a photo into a transparent PNG (macOS Vision) | A helper to prepare heads, outside the Go build; heads live in the ignored `heads/`. |
 
-Every new state needs an entry in `states`, `stateEyes` and `stateStatue`
+Every new state needs an entry in `states`, `stateEyes`, `stateStatue` and `stateAgent`
 (tests check it).
 
 ## Commands
