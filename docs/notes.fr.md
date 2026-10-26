@@ -5,13 +5,23 @@ Décisions, impasses et pièges, pour ne pas les payer deux fois.
 ## Où ça va
 
 lumiases doit se placer dans un panneau à côté de Claude Code et le suivre en
-direct : un hook de commande (`lumiases hook`) relaie chaque événement
-(`PreToolUse`, `PostToolUse`, `Notification`, `Stop`...) en une ligne JSON vers
-l'animateur, par un socket local, et sort aussitôt : un animateur fermé ne
-ralentit jamais Claude. L'animateur traduit les événements en huit états et
-suit le transcript de la session pour les phases qu'aucun hook ne voit
-(réflexion, écriture). Rien de tout ça n'est encore construit : le rendu est
-venu d'abord.
+direct : un hook de commande (`lumiases hook`) traduit chaque événement (`PreToolUse`,
+`Notification`, `Stop`...) en l'un des huit états et l'écrit dans un fichier du
+dossier de cache de l'utilisateur ; `lumiases -follow` lit ce fichier six fois
+par seconde.
+
+- Un fichier, pas le socket prévu d'abord : le hook n'attend jamais
+  l'animateur, marche sans animateur lancé, et un animateur lancé en retard
+  reprend l'état courant tout de suite. Écriture puis renommage : jamais de
+  fichier à moitié écrit.
+- Le hook n'échoue jamais : une entrée invalide ou un événement inconnu
+  laisse l'état tel quel et sort avec 0, car un hook en échec s'affiche dans
+  Claude Code.
+- Un seul fichier pour toutes les sessions ; le découper par `session_id` donnerait
+  un panneau à chacune de deux sessions côte à côte.
+- Pas fait : suivre le transcript pour les phases qu'aucun hook ne voit (le
+  modèle qui écrit sa réponse). `UserPromptSubmit` et `PostToolUse` mettent
+  thinking, ce qui en couvre l'essentiel.
 
 ## Rendu
 

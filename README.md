@@ -8,6 +8,7 @@
   <a href="#features">Features</a> ·
   <a href="#install">Install</a> ·
   <a href="#usage">Usage</a> ·
+  <a href="#follow-claude-code">Follow Claude Code</a> ·
   <a href="#statue-mode">Statue mode</a> ·
   <a href="#development">Development</a> ·
   <a href="README.fr.md">Français</a>
@@ -66,6 +67,7 @@ or from a clone: `go run .`
 lumiases                      # braille, cycling through the states every 4 s
 lumiases -style ascii
 lumiases -state thinking      # hold one state
+lumiases -follow              # follow Claude Code (see below)
 lumiases -eyes glasses        # round, slits, void, glasses, shades
 ```
 
@@ -83,6 +85,42 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 
 The picture fills the pane and follows its size. A smaller font in that pane
 means more cells, so a finer orb.
+
+## Follow Claude Code
+
+Claude Code runs `lumiases hook` on each event; the hook writes the state it
+reads into a small file, and `lumiases -follow`, in a pane next to Claude,
+plays it. Install the binary (`go install .` from a clone puts it in
+`~/go/bin`, which must be on your `PATH`), then add the hooks to
+`~/.claude/settings.json`, or to a project's `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart":       [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "UserPromptSubmit":   [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "PreToolUse":         [{ "matcher": "*", "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "PostToolUse":        [{ "matcher": "*", "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "PostToolUseFailure": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "Notification":       [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "Stop":               [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "SessionEnd":         [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }]
+  }
+}
+```
+
+| Claude | lumiases |
+|---|---|
+| reads, searches, browses | reading |
+| edits or writes a file | editing |
+| runs a command or another tool | running |
+| gets your prompt, between tools, runs a subagent | thinking |
+| waits for you (permission, question) | waiting |
+| a tool fails | error |
+| finishes its answer | done, then idle after 5 s |
+
+With several sessions open, the pane follows the latest event, whichever
+session it came from.
 
 ## Statue mode
 

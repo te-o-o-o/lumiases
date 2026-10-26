@@ -5,12 +5,20 @@ Decisions, dead ends and traps, so they aren't paid for twice.
 ## Where this is going
 
 lumiases is meant to sit in a pane next to Claude Code and follow it live:
-a command hook (`lumiases hook`) relays each event (`PreToolUse`,
-`PostToolUse`, `Notification`, `Stop`...) as one JSON line to the animator over
-a local socket and exits at once, so a closed animator never slows Claude down.
-The animator maps events to the eight states and tails the session transcript
-for the phases no hook sees (thinking, writing). None of that is built yet: the
-renderer came first.
+a command hook (`lumiases hook`) maps each event (`PreToolUse`, `Notification`,
+`Stop`...) to one of the eight states and writes it to a file in the user cache
+dir; `lumiases -follow` checks that file six times a second.
+
+- A file, not the socket first planned: the hook never waits on the animator,
+  works with none running, and an animator started late picks up the current
+  state at once. Write then rename, so a half-written file is never read.
+- The hook never fails: bad input or an unknown event leaves the state as it
+  is and exits 0, since a failing hook shows up in Claude Code.
+- One file for all sessions; keying it by `session_id` is the way to give two
+  side-by-side sessions a pane each.
+- Not done: tailing the transcript for the phases no hook sees (the model
+  writing its answer). `UserPromptSubmit` and `PostToolUse` set thinking,
+  which covers most of it.
 
 ## Rendering
 

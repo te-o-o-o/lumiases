@@ -8,6 +8,7 @@
   <a href="#fonctionnalités">Fonctionnalités</a> ·
   <a href="#installation">Installation</a> ·
   <a href="#utilisation">Utilisation</a> ·
+  <a href="#suivre-claude-code">Suivre Claude Code</a> ·
   <a href="#mode-statue">Mode statue</a> ·
   <a href="#développement">Développement</a> ·
   <a href="README.md">English</a>
@@ -67,6 +68,7 @@ ou depuis un clone : `go run .`
 ```
 lumiases                      # braille, change d'état toutes les 4 s
 lumiases -style ascii
+lumiases -follow              # suit Claude Code (voir plus bas)
 lumiases -state thinking      # garde un seul état
 lumiases -eyes glasses        # round, slits, void, glasses, shades
 ```
@@ -85,6 +87,42 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 
 L'image remplit le panneau et suit sa taille. Une police plus petite dans ce
 panneau donne plus de cellules, donc une orbe plus fine.
+
+## Suivre Claude Code
+
+Claude Code lance `lumiases hook` à chaque événement ; le hook écrit l'état
+qu'il en déduit dans un petit fichier, et `lumiases -follow`, dans un panneau à
+côté de Claude, le joue. Installez le binaire (`go install .` depuis un clone
+le met dans `~/go/bin`, qui doit être dans votre `PATH`), puis ajoutez les
+hooks à `~/.claude/settings.json`, ou au `.claude/settings.json` d'un projet :
+
+```json
+{
+  "hooks": {
+    "SessionStart":       [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "UserPromptSubmit":   [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "PreToolUse":         [{ "matcher": "*", "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "PostToolUse":        [{ "matcher": "*", "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "PostToolUseFailure": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "Notification":       [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "Stop":               [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }],
+    "SessionEnd":         [{ "hooks": [{ "type": "command", "command": "lumiases hook" }] }]
+  }
+}
+```
+
+| Claude | lumiases |
+|---|---|
+| lit, cherche, navigue | reading |
+| modifie ou écrit un fichier | editing |
+| lance une commande ou un autre outil | running |
+| reçoit votre message, entre deux outils, lance un sous-agent | thinking |
+| vous attend (permission, question) | waiting |
+| un outil échoue | error |
+| termine sa réponse | done, puis idle après 5 s |
+
+Avec plusieurs sessions ouvertes, le panneau suit le dernier événement, quelle
+que soit la session.
 
 ## Mode statue
 
