@@ -32,10 +32,12 @@ by keys; wiring it to Claude Code's hooks comes next.
 
 ## Features
 
-- **Four renderings.** Braille (8 dots per cell, dithered into fine dust) and
+- **Five renderings.** Braille (8 dots per cell, dithered into fine dust) and
   ASCII, where each glyph is picked by its shape (`"` for a lit top, `(` for a
   lit left side, `/` on a diagonal) so contours inside the picture survive;
-  pixel, four pixels per cell in quarter blocks, for smooth gradients; and
+  pixel, four pixels per cell in quarter blocks, for smooth gradients;
+  octant, braille's eight points per cell in solid blocks (a recent font or a
+  terminal that draws blocks itself, like Ghostty); and
   image, a real picture for terminals that show them (Ghostty, kitty, WezTerm
   with `enable_kitty_graphics = true`).
 - **Eight states.** idle, thinking, reading, editing, running, waiting, error
@@ -73,7 +75,7 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 
 | Key | Does |
 |---|---|
-| `s` | switch between braille, ASCII, pixel and image |
+| `s` | switch between braille, ASCII, pixel, octant and image |
 | `1`–`8` | pick a state |
 | `c` | cycle through the states again |
 | `h` | next head, then back to the orb (statue mode) |

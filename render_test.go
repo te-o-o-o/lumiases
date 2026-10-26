@@ -40,15 +40,15 @@ func TestBestGlyphFollowsShape(t *testing.T) {
 	}
 }
 
-func TestQuadCellSplitsLitFromDark(t *testing.T) {
+func TestBlockCellSplitsLitFromDark(t *testing.T) {
 	w, k := rgb{200, 200, 200}, rgb{}
-	if got := quadCell([4]rgb{w, w, k, k}); !strings.HasSuffix(got, "▀") || strings.Contains(got, "48;2") {
+	if got := blockCell([]rgb{w, w, k, k}, quadrants); !strings.HasSuffix(got, "▀") || strings.Contains(got, "48;2") {
 		t.Errorf("lit top over dark bottom: got %q, want ▀ on the terminal's background", got)
 	}
-	if got := quadCell([4]rgb{k, w, w, k}); !strings.HasSuffix(got, "▞") {
+	if got := blockCell([]rgb{k, w, w, k}, quadrants); !strings.HasSuffix(got, "▞") {
 		t.Errorf("lit diagonal: got %q, want ▞", got)
 	}
-	if got := quadCell([4]rgb{k, k, k, k}); got != " " {
+	if got := blockCell([]rgb{k, k, k, k}, quadrants); got != " " {
 		t.Errorf("dark cell: got %q, want a space", got)
 	}
 }
@@ -81,5 +81,18 @@ func TestKittyImageRoundTrips(t *testing.T) {
 	}
 	if strings.Count(out, "m=0;") != 1 {
 		t.Error("the last chunk must say m=0")
+	}
+}
+
+func TestOctantsCoverEveryPattern(t *testing.T) {
+	seen := map[rune]bool{}
+	for _, r := range octants {
+		if seen[r] {
+			t.Fatalf("%U drawn for two patterns", r)
+		}
+		seen[r] = true
+	}
+	if last := octants[254]; last != 0x1CDE5 {
+		t.Errorf("the last octant should be U+1CDE5, got %U: the table is off", last)
 	}
 }

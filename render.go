@@ -92,51 +92,57 @@ func bestGlyph(s [8]float64) rune {
 // left, 1 top right, 2 bottom left, 3 bottom right.
 var quadrants = []rune(" ▘▝▀▖▌▞▛▗▚▐▜▄▙▟█")
 
-// quadCell draws 4 pixels in one cell. A cell shows only two colours, the
-// glyph's and its background's, so the pixels are split into the two groups
-// that lose the least colour. Unlit pixels keep the terminal's own
+// octants are the same for a 2×4 grid (bit 2*row+column). Unicode 16 gives
+// 230 octant glyphs in mask order and leaves out the 26 patterns older
+// blocks already draw (halves, quadrants, quarter bars).
+var octants = func() []rune {
+	older := map[int]rune{
+		0: ' ', 1: 0x1CEA8, 2: 0x1CEAB, 3: 0x1FB82, 5: '▘', 10: '▝', 15: '▀',
+		20: 0x1FBE6, 40: 0x1FBE7, 63: 0x1FB85, 64: 0x1CEA3, 80: '▖', 85: '▌',
+		90: '▞', 95: '▛', 128: 0x1CEA0, 160: '▗', 165: '▚', 170: '▐', 175: '▜',
+		192: '▂', 240: '▄', 245: '▙', 250: '▟', 252: '▆', 255: '█',
+	}
+	t, next := make([]rune, 256), rune(0x1CD00)
+	for m := range t {
+		if r, ok := older[m]; ok {
+			t[m] = r
+		} else {
+			t[m], next = next, next+1
+		}
+	}
+	return t
+}()
+
+// blockCell draws a cell's pixels (row by row, left then right) with the
+// block glyph of table. A cell shows only two colours, the glyph's and its
+// background's, so pixels split at the midpoint of their brightness, each
+// side taking its mean colour. Unlit pixels keep the terminal's own
 // background, so the picture has no dark box around it.
-func quadCell(px [4]rgb) string {
-	lit := func(c rgb) bool { return c.r+c.g+c.b > 12 }
-	mean := func(m int) (c rgb, n float64) {
-		for k, p := range px {
-			if m>>k&1 == 1 {
-				c, n = rgb{c.r + p.r, c.g + p.g, c.b + p.b}, n+1
-			}
-		}
-		if n > 0 {
-			c = rgb{c.r / n, c.g / n, c.b / n}
-		}
-		return c, n
+func blockCell(px []rgb, table []rune) string {
+	lum := func(c rgb) float64 { return c.r + c.g + c.b }
+	lo, hi := math.Inf(1), 0.0
+	for _, p := range px {
+		lo, hi = math.Min(lo, lum(p)), math.Max(hi, lum(p))
 	}
-	best, bestE := 15, math.Inf(1)
-	for m := 1; m < 16; m++ {
-		f, _ := mean(m)
-		b, _ := mean(15 ^ m)
-		e := 0.0
-		for k, p := range px {
-			q := b
-			if m>>k&1 == 1 {
-				q = f
-			}
-			e += (p.r-q.r)*(p.r-q.r) + (p.g-q.g)*(p.g-q.g) + (p.b-q.b)*(p.b-q.b)
-		}
-		if e < bestE {
-			best, bestE = m, e
-		}
-	}
-	f, _ := mean(best)
-	b, nb := mean(15 ^ best)
-	if !lit(f) && nb > 0 && lit(b) { // ink on the lit side, never the dark one
-		best, f, b = 15^best, b, f
-	}
-	switch {
-	case !lit(f):
+	if hi <= 12 {
 		return " "
-	case nb == 0 || !lit(b):
-		return fg(f, 1) + string(quadrants[best])
 	}
-	return fg(f, 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm%c\x1b[49m", int(b.r), int(b.g), int(b.b), quadrants[best])
+	var f, b rgb
+	var mask int
+	var nf, nb float64
+	for k, p := range px {
+		if lum(p) > (lo+hi)/2 || lo == hi {
+			mask, nf, f = mask|1<<k, nf+1, rgb{f.r + p.r, f.g + p.g, f.b + p.b}
+		} else {
+			nb, b = nb+1, rgb{b.r + p.r, b.g + p.g, b.b + p.b}
+		}
+	}
+	f = rgb{f.r / nf, f.g / nf, f.b / nf}
+	if nb == 0 || lo <= 12 {
+		return fg(f, 1) + string(table[mask])
+	}
+	b = rgb{b.r / nb, b.g / nb, b.b / nb}
+	return fg(f, 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm%c\x1b[49m", int(b.r), int(b.g), int(b.b), table[mask])
 }
 
 // frame draws one picture of w×h cells, the last row being the label, and
@@ -207,19 +213,25 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 			var sb strings.Builder
 			for i := 0; i < w; i++ {
 				fx, fy := float64(i)+0.5, float64(j)+0.5
-				if style == "pixel" {
-					var px [4]rgb // top left, top right, bottom left, bottom right
+				if style == "pixel" || style == "octant" {
+					// Pixels per cell: 2×2 drawn with quadrants, or 2×4 with
+					// octants, braille's grid in solid blocks.
+					table, ny := quadrants, 2
+					if style == "octant" {
+						table, ny = octants, 4
+					}
+					px := make([]rgb, 2*ny)
 					for k := range px {
 						dx, dy := k%2, k/2
-						c, a, _ := at(fx-0.25+0.5*float64(dx), fy-0.25+0.5*float64(dy))
-						gx, gy := 2*i+dx, 4*j+2*dy
-						if sk := math.Max(sp[gy*gw+gx], sp[(gy+1)*gw+gx]); sk > a {
+						c, a, _ := at(fx-0.25+0.5*float64(dx), fy-0.5+(float64(dy)+0.5)/float64(ny))
+						gx, gy := 2*i+dx, 4*j+dy*4/ny
+						if sk := sp[gy*gw+gx]; sk > a {
 							a, c = sk, dust
 						}
 						a = math.Pow(a, 0.8)
 						px[k] = rgb{c.r * a, c.g * a, c.b * a}
 					}
-					sb.WriteString(quadCell(px))
+					sb.WriteString(blockCell(px, table))
 					continue
 				}
 				if style == "ascii" {

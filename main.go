@@ -1,7 +1,7 @@
 // lumiases animates a living orb in the terminal, meant to sit next to a
 // Claude Code session and change with what Claude does.
 //
-// Keys: s style (braille, ascii, pixel, image), 1-8 state, h next head
+// Keys: s style (braille, ascii, pixel, octant, image), 1-8 state, h next head
 // (statue mode), e eye shape, f eyes on/off, r turn the statue, c cycle
 // states, space pause, q quit.
 //
@@ -74,7 +74,7 @@ func main() {
 		runHook(os.Stdin, statePath())
 		return
 	}
-	style := flag.String("style", "braille", "braille | ascii | pixel | image (Ghostty, kitty, WezTerm)")
+	style := flag.String("style", "braille", "braille | ascii | pixel | octant | image (Ghostty, kitty, WezTerm)")
 	state := flag.String("state", "", "fixed state (idle, thinking, reading, editing, running, waiting, error, done); empty cycles through all")
 	follow := flag.Bool("follow", false, "follow Claude Code: take the state its hooks record (see `lumiases hook` in the README)")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
@@ -131,7 +131,7 @@ func main() {
 			case k == 'q' || k == 3: // 3 = ctrl-c, which raw mode delivers as a byte
 				return
 			case k == 's':
-				*style = map[string]string{"braille": "ascii", "ascii": "pixel", "pixel": "image", "image": "braille"}[*style]
+				*style = map[string]string{"braille": "ascii", "ascii": "pixel", "pixel": "octant", "octant": "image", "image": "braille"}[*style]
 				fmt.Print(kittyClear)
 			case k == 'c':
 				cycle, cycleAt = !cycle, t

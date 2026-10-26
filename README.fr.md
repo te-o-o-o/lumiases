@@ -33,11 +33,13 @@ branchement sur les hooks de Claude Code vient ensuite.
 
 ## Fonctionnalités
 
-- **Quatre rendus.** Braille (8 points par cellule, tramés en poussière fine) et
+- **Cinq rendus.** Braille (8 points par cellule, tramés en poussière fine) et
   ASCII, où chaque caractère est choisi pour sa forme (`"` quand le haut est
   éclairé, `(` pour le côté gauche, `/` sur une diagonale) : les contours à
   l'intérieur de l'image survivent ; et pixel, quatre pixels par cellule en
-  quarts de bloc, pour des dégradés lisses ; et image, une vraie image pour
+  quarts de bloc, pour des dégradés lisses ; octant, les huit points par
+  cellule du braille en blocs pleins (une police récente ou un terminal qui
+  dessine les blocs lui-même, comme Ghostty) ; et image, une vraie image pour
   les terminaux qui savent en afficher (Ghostty, kitty, WezTerm avec
   `enable_kitty_graphics = true`).
 - **Huit états.** idle, thinking, reading, editing, running, waiting, error et
@@ -75,7 +77,7 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 
 | Touche | Effet |
 |---|---|
-| `s` | passe du braille à l'ASCII, au pixel puis à l'image |
+| `s` | passe du braille à l'ASCII, au pixel, à l'octant puis à l'image |
 | `1`–`8` | choisit un état |
 | `c` | relance le défilement des états |
 | `h` | tête suivante, puis retour à l'orbe (mode statue) |
