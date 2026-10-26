@@ -26,7 +26,7 @@ type statueParams struct {
 var stateStatue = map[string]statueParams{
 	"idle":     {look: 0.3},
 	"thinking": {roll: 0.08, rise: 1, frown: 0.6},
-	"reading":  {sweep: 1, look: 0.55},
+	"reading":  {sweep: 1, look: 0.18},
 	"editing":  {glitch: 0.4},
 	"running":  {ripple: 1},
 	"waiting":  {nod: 8},
