@@ -83,6 +83,7 @@ lumiases -form tendrils       # orb, tendrils, eye, hood
 | `s` | style suivant |
 | `1`–`8` | choisit un état |
 | `c` | relance le défilement des états |
+| `+` / `-` | zoome et dézoome : plus de cellules sur un visage, c'est plus de détail ; une police plus petite dans le panneau fait pareil |
 | `h` | forme suivante : orbe, tentacules, un grand œil, une silhouette encapuchonnée, puis les têtes de statue |
 | `r` | fait tourner la tête (mode statue) |
 | `e` | forme d'yeux suivante |

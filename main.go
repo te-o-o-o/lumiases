@@ -2,7 +2,7 @@
 // Claude Code session and change with what Claude does.
 //
 // Keys: s next style, 1-8 state, h next shape (orb, tendrils, eye, hood,
-// then the heads), e eye shape, f eyes on/off, r turn the statue, c cycle
+// then the heads), +/- zoom, e eye shape, f eyes on/off, r turn the statue, c cycle
 // states, space pause, q quit.
 //
 // `lumiases -follow` takes its state from Claude Code, whose hooks run
@@ -80,6 +80,7 @@ func main() {
 	follow := flag.Bool("follow", false, "follow Claude Code: take the state its hooks record (see `lumiases hook` in the README)")
 	frames := flag.Int("frames", 0, "stop after n frames (0 = run until q)")
 	flag.StringVar(&eyeStyle, "eyes", "round", strings.Join(eyeStyles, " | "))
+	flag.Float64Var(&zoom, "zoom", 1, "enlarge the picture, e.g. 1.6 to fill the pane with a face")
 	flag.StringVar(&form, "form", "orb", "the agent's shape: "+strings.Join(forms, " | "))
 	var facePaths pathList
 	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over (best a PNG with its background removed), or a folder of frames from tools/turntable.py; repeat it, or list photos after the flags, and h switches between them and the orb")
@@ -163,6 +164,10 @@ func main() {
 				} else {
 					face = heads[head-len(forms)]
 				}
+			case k == '+' || k == '=':
+				zoom = math.Min(zoom*1.25, 4)
+			case k == '-':
+				zoom = math.Max(zoom/1.25, 0.5)
 			case k == ' ':
 				paused = !paused
 			case k >= '1' && k <= '8':
@@ -213,10 +218,10 @@ func main() {
 		ph += dt * p.speed
 		w, h := termSize()
 		label := fmt.Sprintf(" %s · %s", states[cur].name, *style)
-		hint := "   s style · 1-8 state · e eye shape · f eyes on/off · c cycle · space pause · q quit"
+		hint := "   s style · 1-8 state · +/- zoom · e eye shape · f eyes on/off · c cycle · space pause · q quit"
 		if face != nil {
 			label += " · " + headNames[head-len(forms)]
-			hint = "   s style · 1-8 state · r turn · c cycle · space pause · q quit"
+			hint = "   s style · 1-8 state · +/- zoom · r turn · c cycle · space pause · q quit"
 		} else if form != "orb" {
 			label += " · " + form
 		}

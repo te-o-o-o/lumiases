@@ -81,6 +81,7 @@ lumiases -form tendrils       # orb, tendrils, eye, hood
 | `s` | next style |
 | `1`–`8` | pick a state |
 | `c` | cycle through the states again |
+| `+` / `-` | zoom in and out: more cells on a face is more detail; a smaller font in the pane does the same |
 | `h` | next shape: orb, tendrils, one big eye, a hooded figure, then the statue heads |
 | `r` | turn the head round (statue mode) |
 | `e` | next eye shape |

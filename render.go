@@ -157,13 +157,17 @@ func twoTone(f, b rgb, r rune) string {
 	return fg(f, 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm%c\x1b[49m", int(b.r), int(b.g), int(b.b), r)
 }
 
+// zoom enlarges the picture (+ and - keys): more cells for a face is the
+// only way to more detail, as each cell shows one glyph. Set between frames.
+var zoom = 1.0
+
 // frame draws one picture of w×h cells, the last row being the label, and
 // returns it as one write: synchronized output keeps it from tearing.
 func frame(w, h int, t, ph float64, p params, style, label string) string {
 	rows := h - 1
 	// One cell is ~1 wide by 2 tall: scale so the orb fits the smaller side.
 	// The orb takes about two thirds, leaving room for the halo and dust.
-	scale := math.Min(float64(w), float64(rows)*2) / 3
+	scale := math.Min(float64(w), float64(rows)*2) / 3 * zoom
 	at := func(cx, cy float64) (rgb, float64, float64) { // cx, cy in cell units
 		return sample((cx-float64(w)/2)/scale, (cy-float64(rows)/2)*2/scale, t, ph, p)
 	}
