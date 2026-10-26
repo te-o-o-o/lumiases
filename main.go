@@ -84,7 +84,8 @@ func main() {
 	flag.StringVar(&form, "form", "orb", "the agent's shape: "+strings.Join(forms, " | "))
 	var facePaths pathList
 	flag.Var(&facePaths, "face", "statue mode: a photo of a statue the matter flows over (best a PNG with its background removed), or a folder of frames from tools/turntable.py; repeat it, or list photos after the flags, and h switches between them and the orb")
-	intro := flag.String("intro", introDir(), "folder of GIFs played in name order at start; any key skips them")
+	intro := flag.String("intro", introDir(), "folder of GIFs played in name order at start, as real pictures (Ghostty, kitty, WezTerm); any key skips them")
+	introFx := flag.String("intro-fx", "contrast", "the intro's look: "+strings.Join(filters, " | "))
 	cropArg := flag.String("crop", "0,0,1,1", "statue mode: part of each photo to keep, as x0,y0,x1,y1 fractions")
 	flag.Parse()
 
@@ -114,6 +115,8 @@ func main() {
 		head, face = len(forms), heads[0]
 	}
 
+	var clipT float64
+	var shown *uint8 // the intro frame on screen
 	clips, err := introClips(*intro)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -146,6 +149,7 @@ func main() {
 		if len(clips) > 0 && len(kb) > 0 { // any key skips the intro
 			<-kb
 			clips = nil
+			fmt.Print(kittyClear + "\x1b[2J")
 		}
 		for len(kb) > 0 {
 			switch k := <-kb; {
@@ -185,17 +189,24 @@ func main() {
 				cur, cycle = int(k-'1'), false
 			}
 		}
-		if paused {
-			continue
-		}
-		clip = nil
 		if len(clips) > 0 {
 			if clipT += dt; clipT > clips[0].length() {
 				clips, clipT = clips[1:], 0
 			}
-			if len(clips) > 0 {
-				clip = clips[0]
+			if len(clips) == 0 {
+				fmt.Print(kittyClear + "\x1b[2J")
+			} else {
+				// Most GIFs run slower than 30 fps: send a frame only when it changes.
+				if fr := clips[0].frameAt(clipT); &fr[0] != shown {
+					shown = &fr[0]
+					w, h := termSize()
+					os.Stdout.WriteString(clips[0].show(fr, w, h, *introFx))
+				}
+				continue
 			}
+		}
+		if paused {
+			continue
 		}
 		t += dt
 		if *follow && n%5 == 0 { // the file is tiny, but 6 checks a second are plenty

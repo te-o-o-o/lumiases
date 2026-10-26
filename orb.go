@@ -85,9 +85,6 @@ func fbm(x, y float64) float64 {
 // wide. ph is the accumulated phase (time scaled by speed), so speed changes
 // never make the shape jump.
 func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
-	if clip != nil {
-		return sampleClip(x, y)
-	}
 	if face != nil {
 		return sampleFace(x, y, t, ph, p)
 	}

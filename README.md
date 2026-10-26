@@ -155,10 +155,14 @@ user config folder (macOS `~/Library/Application Support`, Linux
 `~/.config`, Windows `%AppData%`), or the one given with `-intro`:
 
 ```
-lumiases -intro ~/my-gifs
+lumiases -intro ~/my-gifs -intro-fx digital
 ```
 
-Each GIF plays once, looped up to at least 2.5 s, drawn in the current style.
+Each GIF plays once, looped up to at least 2.5 s, as a real picture through
+the kitty graphics protocol (Ghostty, kitty, WezTerm; other terminals show
+nothing). `-intro-fx` picks its look: `contrast` (the default) pushes tones
+and colours apart, `digital` posterizes and dithers it with scanlines and a
+red/blue split, `none` leaves it as it is.
 
 ## Development
 

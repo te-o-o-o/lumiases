@@ -172,11 +172,8 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 		return sample((cx-float64(w)/2)/scale, (cy-float64(rows)/2)*2/scale, t, ph, p)
 	}
 	sp, gw := sparks(w, rows, scale, ph, p), 2*w
-	if face != nil || clip != nil { // a statue throws dust only when it bursts, a clip never
+	if face != nil { // a statue throws dust only when it bursts
 		b := 0.6 * burst(t, p.statue)
-		if clip != nil {
-			b = 0
-		}
 		for i := range sp {
 			sp[i] *= b
 		}

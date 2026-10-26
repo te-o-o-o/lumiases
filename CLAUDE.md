@@ -14,7 +14,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `eyes.go` | `eyeParams`, `stateEyes`, the five eye shapes | Eyes return carve and glow; they never draw glyphs themselves. |
 | `scenes.go` | `forms`, the swarm and the line scenes (pulsar, scope, field, topo, waves, spectrum, orbits, flow); `mood`, each state's eased weight | Drawn from code alone, no picture; they keep `sample`'s contract and read the state through `p.mood`. |
 | `statue.go` | `statueParams`, `stateStatue`, photo loading and keying, `sampleFace` | Effects bend where the photo is read, never the photo. |
-| `gif.go` | The intro: GIFs loaded with `image/gif`, composited, shrunk, and `sampleClip` | `clip` and `clipT` are globals read by the row goroutines: set them only between frames. |
+| `gif.go` | The intro: GIFs loaded with `image/gif`, composited, shrunk, filtered and shown as kitty-protocol pictures | Shown as they are, never through a style; a frame is sent only when it changes. |
 | `render.go` | `frame`: braille dithering, ASCII glyph matching, quarter-block and octant pixels, kitty-protocol images | One goroutine per row; one write per frame inside synchronized output. |
 | `hooks.go` | `lumiases hook` (Claude Code event → state file) and `readState` for `-follow` | The hook never fails and never waits: bad input leaves the state alone, exit 0. |
 | `styles.go` | The looks drawn one cell at a time (`cellStyles`): sextant, wedge, shade, bars, halftone, contour, engrave, matrix, geometric | A style reads its cell through `cell.at`; adding one is an entry in `cellStyles` and `styleNames`. |

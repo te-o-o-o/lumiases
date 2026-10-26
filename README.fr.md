@@ -159,11 +159,15 @@ puis passe à l'orbe ; n'importe quelle touche les saute. Le dossier est
 celui donné avec `-intro` :
 
 ```
-lumiases -intro ~/mes-gifs
+lumiases -intro ~/mes-gifs -intro-fx digital
 ```
 
-Chaque GIF est joué une fois, en boucle jusqu'à au moins 2,5 s, dans le style
-choisi.
+Chaque GIF est joué une fois, en boucle jusqu'à au moins 2,5 s, comme une
+vraie image grâce au protocole graphique de kitty (Ghostty, kitty, WezTerm ;
+les autres terminaux n'affichent rien). `-intro-fx` choisit son rendu :
+`contrast` (par défaut) écarte les tons et les couleurs, `digital` le
+postérise et le tramé avec des lignes de balayage et un décalage rouge/bleu,
+`none` le laisse tel quel.
 
 ## Développement
 

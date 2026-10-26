@@ -46,3 +46,17 @@ func TestLoadClipCompositesPatchesAndTimesFrames(t *testing.T) {
 		t.Errorf("a short clip should loop to at least 2.5 s, got %.2f", c.length())
 	}
 }
+
+func TestFiltersKeepTheEndsAndPosterize(t *testing.T) {
+	px := []uint8{0, 0, 0, 255, 255, 255, 255, 255, 100, 150, 200, 255}
+	c := filter(px, 3, 1, "contrast")
+	if c[0] != 0 || c[4] != 255 {
+		t.Errorf("contrast should keep black and white, got %v", c[:8])
+	}
+	d := filter(px, 3, 1, "digital")
+	for _, v := range d[8:11] {
+		if v%85 != 0 {
+			t.Errorf("digital should posterize to 4 levels, got %v", d[8:11])
+		}
+	}
+}
