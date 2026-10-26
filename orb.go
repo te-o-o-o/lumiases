@@ -93,6 +93,20 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 		return swarm(x, y, t, ph, p)
 	case "pulsar":
 		return pulsar(x, y, t, ph, p)
+	case "scope":
+		return scope(x, y, t, ph, p)
+	case "field":
+		return field(x, y, t, ph, p)
+	case "topo":
+		return topo(x, y, t, ph, p)
+	case "waves":
+		return waves(x, y, t, ph, p)
+	case "spectrum":
+		return spectrum(x, y, t, ph, p)
+	case "orbits":
+		return orbits(x, y, t, ph, p)
+	case "flow":
+		return flow(x, y, t, ph, p)
 	}
 	return orb(x, y, t, ph, p)
 }

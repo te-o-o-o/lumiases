@@ -73,7 +73,7 @@ lumiases -style ascii
 lumiases -state thinking      # hold one state
 lumiases -follow              # follow Claude Code (see below)
 lumiases -eyes glasses        # round, slits, void, glasses, shades
-lumiases -form pulsar         # orb, swarm, pulsar
+lumiases -form pulsar         # orb swarm pulsar scope field topo waves spectrum orbits flow
 ```
 
 | Key | Does |
@@ -82,7 +82,7 @@ lumiases -form pulsar         # orb, swarm, pulsar
 | `1`–`8` | pick a state |
 | `c` | cycle through the states again |
 | `+` / `-` | zoom in and out: more cells on a face is more detail; a smaller font in the pane does the same |
-| `h` | next shape: orb, a swarm, pulsar ridge lines, then the statue heads |
+| `h` | next shape: orb, a swarm, pulsar ridge lines, an oscilloscope, field lines, a contour map, interfering waves, a spectrum, orbits, a flow field, then the statue heads |
 | `r` | turn the head round (statue mode) |
 | `e` | next eye shape |
 | `f` | show or hide the eyes |

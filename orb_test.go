@@ -32,10 +32,10 @@ func TestFormsCoverStatesAndStayInside(t *testing.T) {
 		p := states[0].p
 		p.eyes, p.statue = stateEyes["idle"], stateStatue["idle"]
 		p.mood[mIdle], p.eyes.shown = 1, 1
-		// Dots and lines leave gaps: some point near the centre must be lit.
+		// Dots and lines leave gaps: some point inside the shape must be lit.
 		lit := 0.0
-		for gx := -0.3; gx <= 0.3; gx += 0.01 {
-			for gy := -0.3; gy <= 0.3; gy += 0.01 {
+		for gx := -0.9; gx <= 0.9; gx += 0.01 {
+			for gy := -0.9; gy <= 0.9; gy += 0.01 {
 				_, i, _ := sample(gx, gy, 1, 1, p)
 				lit = math.Max(lit, i)
 			}

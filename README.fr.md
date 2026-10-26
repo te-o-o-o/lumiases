@@ -75,7 +75,7 @@ lumiases -style ascii
 lumiases -follow              # suit Claude Code (voir plus bas)
 lumiases -state thinking      # garde un seul état
 lumiases -eyes glasses        # round, slits, void, glasses, shades
-lumiases -form pulsar         # orb, swarm, pulsar
+lumiases -form pulsar         # orb swarm pulsar scope field topo waves spectrum orbits flow
 ```
 
 | Touche | Effet |
@@ -84,7 +84,7 @@ lumiases -form pulsar         # orb, swarm, pulsar
 | `1`–`8` | choisit un état |
 | `c` | relance le défilement des états |
 | `+` / `-` | zoome et dézoome : plus de cellules sur un visage, c'est plus de détail ; une police plus petite dans le panneau fait pareil |
-| `h` | forme suivante : orbe, nuée, lignes de pulsar, puis les têtes de statue |
+| `h` | forme suivante : orbe, nuée, lignes de pulsar, oscilloscope, lignes de champ, carte topographique, ondes, spectre, orbites, champ de flux, puis les têtes de statue |
 | `r` | fait tourner la tête (mode statue) |
 | `e` | forme d'yeux suivante |
 | `f` | affiche ou masque les yeux |
