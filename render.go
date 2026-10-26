@@ -115,6 +115,33 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 			var sb strings.Builder
 			for i := 0; i < w; i++ {
 				fx, fy := float64(i)+0.5, float64(j)+0.5
+				if style == "pixel" {
+					// Two pixels per cell, the top in the glyph's colour and the
+					// bottom in the background's: fewer points than braille, but
+					// each carries its own colour, so gradients stay smooth.
+					var px [2]rgb
+					for k := range px {
+						c, a, _ := at(fx, fy-0.25+0.5*float64(k))
+						gy := 4*j + 2*k
+						if sk := math.Max(sp[gy*gw+2*i], sp[(gy+1)*gw+2*i+1]); sk > a {
+							a, c = sk, dust
+						}
+						a = math.Pow(a, 0.8)
+						px[k] = rgb{c.r * a, c.g * a, c.b * a}
+					}
+					lit := func(c rgb) bool { return c.r+c.g+c.b > 12 }
+					switch top, bot := lit(px[0]), lit(px[1]); {
+					case top && bot:
+						sb.WriteString(fg(px[0], 1) + fmt.Sprintf("\x1b[48;2;%d;%d;%dm▀\x1b[49m", int(px[1].r), int(px[1].g), int(px[1].b)))
+					case top:
+						sb.WriteString(fg(px[0], 1) + "▀")
+					case bot:
+						sb.WriteString(fg(px[1], 1) + "▄")
+					default:
+						sb.WriteByte(' ')
+					}
+					continue
+				}
 				if style == "ascii" {
 					var s [8]float64
 					var sum rgb

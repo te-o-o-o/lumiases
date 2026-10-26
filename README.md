@@ -31,9 +31,10 @@ by keys; wiring it to Claude Code's hooks comes next.
 
 ## Features
 
-- **Two renderings.** Braille (8 dots per cell, dithered into fine dust) and
+- **Three renderings.** Braille (8 dots per cell, dithered into fine dust) and
   ASCII, where each glyph is picked by its shape (`"` for a lit top, `(` for a
-  lit left side, `/` on a diagonal) so contours inside the picture survive.
+  lit left side, `/` on a diagonal) so contours inside the picture survive;
+  and pixel, two coloured half-blocks per cell, for smooth gradients.
 - **Eight states.** idle, thinking, reading, editing, running, waiting, error
   and done each have their own outline, speed, palette and gradient; the orb
   morphs from one to the next in about 300 ms.
@@ -68,7 +69,7 @@ lumiases -eyes glasses        # round, slits, void, glasses, shades
 
 | Key | Does |
 |---|---|
-| `s` | switch between braille and ASCII |
+| `s` | switch between braille, ASCII and pixel |
 | `1`–`8` | pick a state |
 | `c` | cycle through the states again |
 | `h` | next head, then back to the orb (statue mode) |
