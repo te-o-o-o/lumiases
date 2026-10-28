@@ -32,15 +32,10 @@ by keys; wiring it to Claude Code's hooks comes next.
 
 ## Features
 
-- **Fourteen renderings.** Braille (8 dots per cell, dithered into fine dust) and
+- **Ten renderings.** Braille (8 dots per cell, dithered into fine dust) and
   ASCII, where each glyph is picked by its shape (`"` for a lit top, `(` for a
-  lit left side, `/` on a diagonal) so contours inside the picture survive;
-  pixel, four pixels per cell in quarter blocks, for smooth gradients;
-  octant, braille's eight points per cell in solid blocks (a recent font or a
-  terminal that draws blocks itself, like Ghostty); and
-  image, a real picture for terminals that show them (Ghostty, kitty, WezTerm
-  with `enable_kitty_graphics = true`). Plus looks to try: sextant and wedge
-  (blocks and diagonal blocks), shade, bars, halftone, contour (relief-map
+  lit left side, `/` on a diagonal) so contours inside the picture survive.
+  Plus looks to try: wedge (diagonal blocks), shade, bars, halftone, contour (relief-map
   lines), engrave (hatching along the forms), matrix and geometric.
 - **Eight states.** idle, thinking, reading, editing, running, waiting, error
   and done each have their own outline, speed, palette and gradient; the orb
@@ -73,7 +68,7 @@ lumiases -style ascii
 lumiases -state thinking      # hold one state
 lumiases -follow              # follow Claude Code (see below)
 lumiases -eyes glasses        # round, slits, void, glasses, shades
-lumiases -form pulsar         # orb swarm pulsar scope field topo waves spectrum orbits flow
+lumiases -form pulsar         # orb swarm pulsar scope field topo waves orbits flow
 ```
 
 | Key | Does |
@@ -82,7 +77,7 @@ lumiases -form pulsar         # orb swarm pulsar scope field topo waves spectrum
 | `1`–`8` | pick a state |
 | `c` | cycle through the states again |
 | `+` / `-` | zoom in and out: more cells on a face is more detail; a smaller font in the pane does the same |
-| `h` | next shape: orb, a swarm, pulsar ridge lines, an oscilloscope, field lines, a contour map, interfering waves, a spectrum, orbits, a flow field, then the statue heads |
+| `h` | next shape: orb, a swarm, pulsar ridge lines, an oscilloscope, field lines, a contour map, interfering waves, orbits, a flow field, then the statue heads |
 | `r` | turn the head round (statue mode) |
 | `e` | next eye shape |
 | `f` | show or hide the eyes |

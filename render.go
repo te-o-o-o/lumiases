@@ -26,8 +26,8 @@ func fg(c rgb, a float64) string {
 var ramp = []rune(" .·:;=+*xoO#%@")
 
 // styleNames is the order s steps through.
-var styleNames = []string{"braille", "ascii", "pixel", "octant", "sextant", "wedge", "shade", "bars",
-	"halftone", "contour", "engrave", "matrix", "geometric", "image"}
+var styleNames = []string{"braille", "ascii", "wedge", "shade", "bars",
+	"halftone", "contour", "engrave", "matrix", "geometric"}
 
 // glyphShapes says where each glyph puts its ink in a cell cut into 2
 // columns by 4 rows (left then right, top row first), in tenths. ASCII
@@ -92,11 +92,8 @@ func bestGlyph(s [8]float64) rune {
 	return best
 }
 
-// quadrants are the block glyphs by which quarters they fill: bit 0 top
-// left, 1 top right, 2 bottom left, 3 bottom right.
-var quadrants = []rune(" ▘▝▀▖▌▞▛▗▚▐▜▄▙▟█")
-
-// octants are the same for a 2×4 grid (bit 2*row+column). Unicode 16 gives
+// octants are the block glyphs of a 2×4 grid, by which parts they fill
+// (bit 2*row+column). Unicode 16 gives
 // 230 octant glyphs in mask order and leaves out the 26 patterns older
 // blocks already draw (halves, quadrants, quarter bars).
 var octants = func() []rune {
@@ -116,37 +113,6 @@ var octants = func() []rune {
 	}
 	return t
 }()
-
-// blockCell draws a cell's pixels (row by row, left then right) with the
-// block glyph of table. A cell shows only two colours, the glyph's and its
-// background's, so pixels split at the midpoint of their brightness, each
-// side taking its mean colour. Unlit pixels keep the terminal's own
-// background, so the picture has no dark box around it.
-func blockCell(px []rgb, table []rune) string {
-	lum := func(c rgb) float64 { return c.r + c.g + c.b }
-	lo, hi := math.Inf(1), 0.0
-	for _, p := range px {
-		lo, hi = math.Min(lo, lum(p)), math.Max(hi, lum(p))
-	}
-	if hi <= 12 {
-		return " "
-	}
-	var f, b rgb
-	var mask int
-	var nf, nb float64
-	for k, p := range px {
-		if lum(p) > (lo+hi)/2 || lo == hi {
-			mask, nf, f = mask|1<<k, nf+1, rgb{f.r + p.r, f.g + p.g, f.b + p.b}
-		} else {
-			nb, b = nb+1, rgb{b.r + p.r, b.g + p.g, b.b + p.b}
-		}
-	}
-	f = rgb{f.r / nf, f.g / nf, f.b / nf}
-	if nb > 0 {
-		b = rgb{b.r / nb, b.g / nb, b.b / nb}
-	}
-	return twoTone(f, b, table[mask])
-}
 
 // twoTone prints r in colour f on background b; a dark b keeps the
 // terminal's own background.
@@ -181,43 +147,6 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 	dust := lerpC(p.mid, p.center, 0.4)
 	foot := "\x1b[2K" + fg(p.mid, 1) + " ●\x1b[0m\x1b[2m" + label + "\x1b[0m\x1b[?2026l"
 
-	if style == "image" {
-		// A real picture through the kitty graphics protocol (Ghostty, kitty,
-		// WezTerm), kept stylised on purpose: at full resolution the orb read
-		// as a photo. 2×4 big pixels per cell, each a 2×2 square with a
-		// 1-pixel gap around it, and brightness in 6 steps like pixel art.
-		// Alpha carries the brightness so the terminal's background shows.
-		const sx, sy, bs = 2, 4, 3
-		pw, pht := w*sx*bs, rows*sy*bs
-		pix := make([]byte, pw*pht*4)
-		var wg sync.WaitGroup
-		for y := 0; y < rows*sy; y++ {
-			wg.Add(1)
-			go func(y int) {
-				defer wg.Done()
-				for x := 0; x < w*sx; x++ {
-					c, a, _ := at((float64(x)+0.5)/sx, (float64(y)+0.5)/sy)
-					if sk := sp[(y*4/sy)*gw+x*2/sx]; sk > a {
-						a, c = sk, dust
-					}
-					al := byte(255 * math.Round(5*math.Pow(math.Min(a, 1), 0.8)) / 5)
-					if al == 0 {
-						continue
-					}
-					for dy := 0; dy < bs-1; dy++ {
-						for dx := 0; dx < bs-1; dx++ {
-							o := ((y*bs+dy)*pw + x*bs + dx) * 4
-							pix[o], pix[o+1], pix[o+2] = byte(math.Min(c.r, 255)), byte(math.Min(c.g, 255)), byte(math.Min(c.b, 255))
-							pix[o+3] = al
-						}
-					}
-				}
-			}(y)
-		}
-		wg.Wait()
-		return "\x1b[?2026h\x1b[H" + kittyImage(pix, pw, pht, w, rows) + fmt.Sprintf("\x1b[%d;1H", h) + foot
-	}
-
 	// Rows are independent: one goroutine each keeps braille's 8 samples
 	// per cell inside the frame budget.
 	lines := make([]string, rows)
@@ -240,27 +169,6 @@ func frame(w, h int, t, ph float64, p params, style, label string) string {
 						}
 						return c, a
 					}}))
-					continue
-				}
-				if style == "pixel" || style == "octant" {
-					// Pixels per cell: 2×2 drawn with quadrants, or 2×4 with
-					// octants, braille's grid in solid blocks.
-					table, ny := quadrants, 2
-					if style == "octant" {
-						table, ny = octants, 4
-					}
-					px := make([]rgb, 2*ny)
-					for k := range px {
-						dx, dy := k%2, k/2
-						c, a, _ := at(fx-0.25+0.5*float64(dx), fy-0.5+(float64(dy)+0.5)/float64(ny))
-						gx, gy := 2*i+dx, 4*j+dy*4/ny
-						if sk := sp[gy*gw+gx]; sk > a {
-							a, c = sk, dust
-						}
-						a = math.Pow(a, 0.8)
-						px[k] = rgb{c.r * a, c.g * a, c.b * a}
-					}
-					sb.WriteString(blockCell(px, table))
 					continue
 				}
 				if style == "ascii" {
@@ -347,5 +255,5 @@ func kittyImage(pix []byte, pw, ph, cols, rows int) string {
 	return sb.String()
 }
 
-// kittyClear removes the picture when leaving the image style.
+// kittyClear removes the intro picture.
 const kittyClear = "\x1b_Ga=d,d=A,q=2\x1b\\"

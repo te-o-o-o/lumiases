@@ -15,7 +15,6 @@ type cell struct {
 }
 
 var cellStyles = map[string]func(cell) string{
-	"sextant":   sextantCell,
 	"wedge":     wedgeCell,
 	"shade":     shadeCell,
 	"bars":      barsCell,
@@ -57,7 +56,7 @@ func vivid(c rgb) rgb {
 }
 
 // sextants are the block glyphs of a 2×3 grid (bit 2*row+column), in mask
-// order; four patterns are older glyphs.
+// order; four patterns are older glyphs. Wedge draws its flat parts with them.
 var sextants = func() []rune {
 	older := map[int]rune{0: ' ', 21: '▌', 42: '▐', 63: '█'}
 	t, next := make([]rune, 64), rune(0x1FB00)
@@ -70,11 +69,6 @@ var sextants = func() []rune {
 	}
 	return t
 }()
-
-func sextantCell(c cell) string {
-	px, _ := c.grid(2, 3)
-	return blockCell(px, sextants)
-}
 
 // wedges are the diagonal block glyphs (U+1FB3C..1FB67) with the part of a
 // 4×6 grid each one fills (bit 4*row+column), worked out from their Unicode

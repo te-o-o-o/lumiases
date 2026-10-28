@@ -33,16 +33,11 @@ branchement sur les hooks de Claude Code vient ensuite.
 
 ## Fonctionnalités
 
-- **Quatorze rendus.** Braille (8 points par cellule, tramés en poussière fine) et
+- **Dix rendus.** Braille (8 points par cellule, tramés en poussière fine) et
   ASCII, où chaque caractère est choisi pour sa forme (`"` quand le haut est
   éclairé, `(` pour le côté gauche, `/` sur une diagonale) : les contours à
-  l'intérieur de l'image survivent ; et pixel, quatre pixels par cellule en
-  quarts de bloc, pour des dégradés lisses ; octant, les huit points par
-  cellule du braille en blocs pleins (une police récente ou un terminal qui
-  dessine les blocs lui-même, comme Ghostty) ; et image, une vraie image pour
-  les terminaux qui savent en afficher (Ghostty, kitty, WezTerm avec
-  `enable_kitty_graphics = true`). Et des looks à essayer : sextant et wedge
-  (blocs et blocs en biseau), shade, bars, halftone, contour (lignes de
+  l'intérieur de l'image survivent. Et des looks à essayer : wedge (blocs en
+  biseau), shade, bars, halftone, contour (lignes de
   niveau), engrave (hachures qui suivent les formes), matrix et geometric.
 - **Huit états.** idle, thinking, reading, editing, running, waiting, error et
   done ont chacun leur contour, leur vitesse, leur palette et leur dégradé ;
@@ -75,7 +70,7 @@ lumiases -style ascii
 lumiases -follow              # suit Claude Code (voir plus bas)
 lumiases -state thinking      # garde un seul état
 lumiases -eyes glasses        # round, slits, void, glasses, shades
-lumiases -form pulsar         # orb swarm pulsar scope field topo waves spectrum orbits flow
+lumiases -form pulsar         # orb swarm pulsar scope field topo waves orbits flow
 ```
 
 | Touche | Effet |
@@ -84,7 +79,7 @@ lumiases -form pulsar         # orb swarm pulsar scope field topo waves spectrum
 | `1`–`8` | choisit un état |
 | `c` | relance le défilement des états |
 | `+` / `-` | zoome et dézoome : plus de cellules sur un visage, c'est plus de détail ; une police plus petite dans le panneau fait pareil |
-| `h` | forme suivante : orbe, nuée, lignes de pulsar, oscilloscope, lignes de champ, carte topographique, ondes, spectre, orbites, champ de flux, puis les têtes de statue |
+| `h` | forme suivante : orbe, nuée, lignes de pulsar, oscilloscope, lignes de champ, carte topographique, ondes, orbites, champ de flux, puis les têtes de statue |
 | `r` | fait tourner la tête (mode statue) |
 | `e` | forme d'yeux suivante |
 | `f` | affiche ou masque les yeux |

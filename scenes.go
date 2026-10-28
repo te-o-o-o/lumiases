@@ -19,7 +19,7 @@ const (
 	mDone
 )
 
-var forms = []string{"orb", "swarm", "pulsar", "scope", "field", "topo", "waves", "spectrum", "orbits", "flow"}
+var forms = []string{"orb", "swarm", "pulsar", "scope", "field", "topo", "waves", "orbits", "flow"}
 
 // form is set from main between frames, read by the row goroutines.
 var form = "orb"
@@ -291,37 +291,6 @@ func waves(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	v = math.Max(v, m[mDone]*math.Exp(-sq((r-1.2*p.statue.blast)/0.05))*(1-0.5*p.statue.blast))
 	v *= smoothstep(1.25, 0.8, r)
 	return lerpC(p.mid, p.center, v), v, 0.5
-}
-
-// spectrum is a mirrored row of level bars: quiet when idle, the middle
-// bands pulsing while thinking, chatter while editing and running, a flat
-// line with a blip while waiting, clipping on error, a swell when done.
-func spectrum(x, y, t, ph float64, p params) (rgb, float64, float64) {
-	m := p.mood
-	s := p.size / 0.8
-	x, y = x/s+p.shake*math.Sin(t*53), y/s
-	if math.Abs(x) > 1 || math.Abs(y) > 1 {
-		return p.edge, 0, 0.5
-	}
-	const nb = 25
-	fi := (x + 1) / 2 * nb
-	i := math.Floor(fi)
-	fx := fi - i
-	c := i/(nb-1)*2 - 1
-	b := p.statue.blast
-	lv := m[mIdle]*(0.06+0.08*noise(c*3, ph*0.8)) +
-		m[mThinking]*0.6*math.Exp(-c*c/0.12)*(0.6+0.4*math.Sin(ph*3+c*4)) +
-		m[mReading]*(0.05+0.55*math.Exp(-sq((c-0.8*math.Sin(t*1.2))/0.2))) +
-		m[mEditing]*0.7*math.Pow(noise(c*4, ph*4), 1.5) +
-		m[mRunning]*0.8*math.Pow(noise(c*5, ph*6), 1.2) +
-		m[mWaiting]*(0.02+0.6*math.Exp(-math.Mod(t, 1.6)*6)*math.Exp(-c*c/0.02)) +
-		m[mError]*0.85*math.Floor(hash(int(i), int(t*12))+0.5) +
-		m[mDone]*0.8*math.Exp(-sq((math.Abs(c)-b)/0.25))*(1-0.7*b)
-	lv *= 0.85
-	ay := math.Abs(y)
-	v := smoothstep(lv+0.015, lv-0.015, ay) * smoothstep(0.12, 0.22, fx) * smoothstep(0.88, 0.78, fx)
-	v = math.Max(v, 0.5*smoothstep(0.012, 0.004, ay))
-	return lerpC(p.mid, p.center, math.Min(1, ay/0.6)), v, 0.5
 }
 
 // orbits are bodies on ellipses round a small sun, each trailing its own

@@ -89,6 +89,6 @@ par seconde.
 
 | Système | Quoi |
 |---|---|
-| macOS (Darwin 27), Apple Silicon | Compile, tests verts, chaque style et le mode statue regardés dans un terminal, ~30 i/s à 200×60 ; le style image regardé dans Ghostty seulement (~24 i/s à 100×46) |
+| macOS (Darwin 27), Apple Silicon | Compile, tests verts, chaque style et le mode statue regardés dans un terminal, ~30 i/s à 200×60 ; l'intro GIF vérifiée sur des captures décodées, pas encore regardée dans Ghostty |
 | Linux | `GOOS=linux go vet` seulement ; jamais lancé |
 | Windows | `GOOS=windows go vet` seulement ; jamais lancé. Pas de taille de terminal (repli sur `COLUMNS`/`LINES`), pas de touches (pas de `stty`) |

@@ -101,8 +101,6 @@ func sample(x, y, t, ph float64, p params) (rgb, float64, float64) {
 		return topo(x, y, t, ph, p)
 	case "waves":
 		return waves(x, y, t, ph, p)
-	case "spectrum":
-		return spectrum(x, y, t, ph, p)
 	case "orbits":
 		return orbits(x, y, t, ph, p)
 	case "flow":
