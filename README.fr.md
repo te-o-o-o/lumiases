@@ -2,7 +2,7 @@
 
 <p align="center">Une orbe vivante qui regarde Claude Code travailler, pour que vous n'ayez pas à le faire.</p>
 
-<p align="center"><sub>prototype · Go 1.22+, zéro dépendance · macOS · MIT</sub></p>
+<p align="center"><sub>v0.1.0 · Go, zéro dépendance · macOS (Linux et Windows non testés) · MIT</sub></p>
 
 <p align="center">
   <a href="#fonctionnalités">Fonctionnalités</a> ·
@@ -10,6 +10,7 @@
   <a href="#utilisation">Utilisation</a> ·
   <a href="#suivre-claude-code">Suivre Claude Code</a> ·
   <a href="#mode-statue">Mode statue</a> ·
+  <a href="#intro">Intro</a> ·
   <a href="#développement">Développement</a> ·
   <a href="README.md">English</a>
 </p>
@@ -27,9 +28,8 @@
 
 lumiases dessine une orbe de matière vivante dans un panneau de terminal,
 pensée pour se placer à côté d'une session Claude Code : sa forme, sa vitesse
-et ses couleurs changent selon ce que fait Claude. Pour l'instant c'est le
-moteur de rendu seul, qui fait défiler ses états ou se pilote au clavier ; le
-branchement sur les hooks de Claude Code vient ensuite.
+et ses couleurs changent selon ce que fait Claude, grâce aux hooks de Claude
+Code. Seule, elle fait défiler ses états ou se pilote au clavier.
 
 ## Fonctionnalités
 
@@ -46,15 +46,35 @@ branchement sur les hooks de Claude Code vient ensuite.
   dans la matière et qui bougent avec elle, avec une expression par état : ils
   se plissent pendant la réflexion, balaient pendant la lecture, s'écarquillent
   en attente, se froncent sur une erreur et sourient à la fin.
+- **Dix scènes dessinées par le code seul.** En plus de l'orbe : une nuée de
+  points, et des dessins au trait à la manière des tracés scientifiques
+  (lignes de pulsar, oscilloscope, lignes de champ, carte topographique,
+  ondes, spectre, orbites, champ de flux), chacune avec une figure par état.
 - **Mode statue.** La matière coule sur la photo d'une statue : la tête
   respire et se balance, et chaque état ajoute son effet (fumée qui monte,
   bande de lumière qui scanne, glitchs, ondes, reflet).
+- **Une intro en GIF.** Les GIF d'un dossier sont joués au lancement comme de
+  vraies images dans les terminaux qui savent en afficher (Ghostty, kitty,
+  WezTerm), tels quels ou avec un filtre contraste ou digital.
 - **Un petit binaire.** Bibliothèque standard de Go uniquement, environ 30
   images par seconde sur un panneau de 200×60.
 
 ## Installation
 
-Pas encore de release. Avec Go 1.22 ou plus récent :
+Téléchargez le binaire de votre système dans les
+[releases](https://github.com/te-o-o-o/lumiases/releases), nommez-le
+`lumiases`, rendez-le exécutable et placez-le dans votre `PATH` :
+
+```
+chmod +x lumiases-darwin-arm64 && mv lumiases-darwin-arm64 /usr/local/bin/lumiases
+```
+
+Les binaires ne sont pas signés. Sur macOS, retirez une fois l'attribut de
+quarantaine avec `xattr -d com.apple.quarantine /usr/local/bin/lumiases` ; sur
+Windows, choisissez « Informations complémentaires » puis « Exécuter quand
+même » si SmartScreen le bloque.
+
+Depuis les sources, avec Go 1.22 ou plus récent :
 
 ```
 go install github.com/te-o-o-o/lumiases@latest
@@ -170,6 +190,7 @@ postérise et le tramé avec des lignes de balayage et un décalage rouge/bleu,
 go vet ./... && go test ./...
 go run . -style ascii
 COLUMNS=110 LINES=50 go run . -state error -frames 45 < /dev/null > frame.ansi   # capturer des images sans terminal
+COLUMNS=80 LINES=34 go run . -form pulsar -state thinking -frames 90 < /dev/null | go run ./tools/readme-gif > docs/pulsar.gif
 ```
 
 Décisions, impasses et ce qui a été vérifié sur quel système :

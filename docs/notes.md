@@ -22,8 +22,11 @@ dir; `lumiases -follow` checks that file six times a second.
 
 ## Rendering
 
-- **Braille and ASCII only.** Half-block "plasma", topographic rings and
-  metaballs were tried and dropped: they read as generic next to the other two.
+- **Braille and ASCII first.** Half-block "plasma" and metaballs were tried
+  as ways to draw the orb and dropped: they read as generic next to the other
+  two. Pixel (quarter blocks), octant, sextant and a kitty-protocol image
+  style were built, then left out of v0.1.0 to keep the list short;
+  `git revert 842f73b` brings them back.
 - **Braille: density carries brightness, colour keeps its hue.** Dots are thin;
   averaging the cell's colours toward a dark rim made the first orb almost
   invisible. The colour is now scaled to full strength and the dot count
@@ -44,6 +47,39 @@ dir; `lumiases -follow` checks that file six times a second.
   frames a second.
 - **Particles are stateless.** A particle's age is a function of the phase,
   so nothing is stored between frames and they follow the state's speed.
+
+## Scenes
+
+- **Each state's weight, eased.** `p.mood` holds one weight per state, eased
+  like every other parameter, so a scene blends its figures while the state
+  changes instead of cutting from one to the next.
+- **Lines of one width.** Contours and field lines are isolines of a field,
+  their distance divided by the field's gradient (`iso`): steep or flat, a
+  line keeps the same thickness.
+- **Field lines from summed angles.** The lines between two poles are
+  isolines of the sum of the angles round each; with the exact gradient, the
+  jump where `atan2` wraps never shows.
+- **The oscilloscope switches figures.** Two Lissajous figures with different
+  frequencies can't be blended, so the dominant state picks one.
+- **Dropped:** a black hole, a ray-marched 3D mask, tendrils, one big eye
+  and a hooded figure; they looked busy or out of place next to the line
+  drawings.
+
+## Intro
+
+- **GIFs as they are, not through a style.** A GIF drawn in braille lost what
+  made it worth showing; the intro sends real pictures through the kitty
+  graphics protocol, with an optional contrast or digital filter.
+- **Frames composited on load.** A GIF frame is often only the patch that
+  changed; frames are drawn over the ones before, following each frame's
+  disposal, then shrunk to 480 pixels at most so a long GIF stays small.
+- **A frame is sent only when it changes.** GIFs mostly run slower than the
+  30 fps loop.
+
+## README GIFs
+
+`tools/readme-gif` turns a braille capture into a GIF by drawing the dots
+themselves: no font, and every capture of one size gives a GIF of one size.
 
 ## Statue mode
 

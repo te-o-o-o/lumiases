@@ -25,9 +25,11 @@ par seconde.
 
 ## Rendu
 
-- **Braille et ASCII seulement.** Le « plasma » en demi-blocs, les anneaux
-  topographiques et les metaballs ont été essayés puis écartés : à côté des
-  deux autres, ils faisaient générique.
+- **Braille et ASCII d'abord.** Le « plasma » en demi-blocs et les metaballs
+  ont été essayés pour dessiner l'orbe puis écartés : à côté des deux autres,
+  ils faisaient générique. Pixel (quarts de bloc), octant, sextant et un style
+  image par le protocole de kitty ont été faits, puis laissés hors de la
+  v0.1.0 pour garder une liste courte ; `git revert 842f73b` les ramène.
 - **Braille : la densité porte la luminosité, la couleur garde sa teinte.**
   Les points sont fins ; moyenner les couleurs d'une cellule vers un bord
   sombre rendait la première orbe presque invisible. La couleur est désormais
@@ -49,6 +51,41 @@ par seconde.
   panneau de 200×60 tient environ 30 images par seconde.
 - **Particules sans état.** L'âge d'une particule découle de la phase : rien
   n'est gardé d'une image à l'autre et elles suivent la vitesse de l'état.
+
+## Scènes
+
+- **Le poids de chaque état, lissé.** `p.mood` garde un poids par état, lissé
+  comme tous les autres paramètres : une scène mélange ses figures pendant le
+  changement d'état au lieu de sauter de l'une à l'autre.
+- **Des lignes d'une seule épaisseur.** Courbes de niveau et lignes de champ
+  sont les isolignes d'un champ, leur distance divisée par le gradient du
+  champ (`iso`) : en pente forte ou douce, une ligne garde la même épaisseur.
+- **Les lignes de champ viennent de la somme des angles.** Les lignes entre
+  deux pôles sont les isolignes de la somme des angles autour de chacun ; avec
+  le gradient exact, le saut d'`atan2` ne se voit jamais.
+- **L'oscilloscope change de figure.** Deux figures de Lissajous de
+  fréquences différentes ne se mélangent pas : l'état dominant en choisit une.
+- **Écartés :** un trou noir, un masque 3D en ray marching, des tentacules, un
+  grand œil et une silhouette encapuchonnée ; ils faisaient chargés ou hors de
+  propos à côté des dessins au trait.
+
+## Intro
+
+- **Les GIF tels quels, pas à travers un style.** Un GIF en braille perdait ce
+  qui le rendait intéressant ; l'intro envoie de vraies images par le
+  protocole graphique de kitty, avec un filtre contraste ou digital en option.
+- **Images recomposées au chargement.** Une image de GIF n'est souvent que le
+  morceau qui a changé ; chacune est dessinée sur les précédentes, selon son
+  mode d'effacement, puis réduite à 480 pixels au plus pour qu'un long GIF
+  reste léger.
+- **Une image n'est envoyée que si elle change.** Les GIF tournent le plus
+  souvent moins vite que la boucle à 30 i/s.
+
+## GIF du README
+
+`tools/readme-gif` transforme une capture braille en GIF en dessinant les
+points eux-mêmes : pas de police, et la même taille pour toute capture de même
+taille.
 
 ## Mode statue
 
