@@ -19,6 +19,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `hooks.go` | `lumiases hook` (Claude Code event → state file) and `readState` for `-follow` | The hook never fails and never waits: bad input leaves the state alone, exit 0. |
 | `styles.go` | The looks drawn one cell at a time (`cellStyles`): wedge, shade, bars, halftone, contour, engrave, matrix, geometric | A style reads its cell through `cell.at`; adding one is an entry in `cellStyles` and `styleNames`. |
 | `term_unix.go`, `term_windows.go` | `ttySize` | Windows has none yet. |
+| `tools/readme-gif` | Turns a braille capture into the README's GIFs, drawing the dots itself | A separate `main`, stdlib only, outside the program. |
 | `tools/cutout.swift` | Cuts a statue out of a photo into a transparent PNG (macOS Vision) | A helper to prepare heads, outside the Go build; heads live in the ignored `heads/`. |
 
 Every new state needs an entry in `states`, `stateEyes` and `stateStatue`
