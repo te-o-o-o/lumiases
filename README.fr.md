@@ -1,6 +1,6 @@
 <h1 align="center">lumiases</h1>
 
-<p align="center">Une orbe vivante qui regarde Claude Code travailler, pour que vous n'ayez pas à le faire.</p>
+<p align="center">Une animation vivante pour le terminal qui suit le rythme de Claude Code : réflexion, lecture, édition, échec. Une douzaine de looks, de la poussière de braille à l'ASCII en passant par les lignes de crête d'un pulsar.</p>
 
 <p align="center"><sub>v0.1.0 · Go, zéro dépendance · macOS (Linux et Windows non testés) · MIT</sub></p>
 

@@ -1,6 +1,6 @@
 <h1 align="center">lumiases</h1>
 
-<p align="center">A living orb that watches Claude Code work, so you don't have to.</p>
+<p align="center">A living terminal animation that grooves along with Claude Code: thinking, reading, editing, failing. A dozen looks, from braille dust to ASCII to pulsar ridge lines.</p>
 
 <p align="center"><sub>v0.1.0 · Go, zero dependencies · macOS (Linux and Windows untested) · MIT</sub></p>
 
