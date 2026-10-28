@@ -15,17 +15,6 @@
   <a href="README.fr.md">Français</a>
 </p>
 
-<table align="center">
-  <tr>
-    <td align="center"><img src="docs/braille-editing.png" width="330" alt="An orange and red orb drawn in braille dots, lumpy and churning, with two dark eyes looking down"><br><sub>Braille, editing</sub></td>
-    <td align="center"><img src="docs/ascii-waiting.png" width="330" alt="An amber orb drawn in ASCII characters with two wide-open eyes carved into it"><br><sub>ASCII, waiting</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/braille-idle.png" width="330" alt="A blue braille orb with two hollow sockets, a pinpoint of light in each"><br><sub>Braille, idle, void eyes</sub></td>
-    <td align="center"><img src="docs/ascii-thinking.png" width="330" alt="A violet ASCII orb wearing round glasses, the frames drawn in bright characters"><br><sub>ASCII, thinking, glasses</sub></td>
-  </tr>
-</table>
-
 lumiases draws an orb of living matter in a terminal pane, meant to sit next
 to a Claude Code session: its shape, speed and colours change with what Claude
 is doing, through Claude Code's hooks. On its own it cycles through its

@@ -15,17 +15,6 @@
   <a href="README.md">English</a>
 </p>
 
-<table align="center">
-  <tr>
-    <td align="center"><img src="docs/braille-editing.png" width="330" alt="Une orbe orange et rouge en points braille, bosselée et mouvante, avec deux yeux sombres tournés vers le bas"><br><sub>Braille, editing</sub></td>
-    <td align="center"><img src="docs/ascii-waiting.png" width="330" alt="Une orbe ambre en caractères ASCII, deux grands yeux ouverts creusés dedans"><br><sub>ASCII, waiting</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/braille-idle.png" width="330" alt="Une orbe bleue en braille avec deux orbites creuses, un point de lumière au fond de chacune"><br><sub>Braille, idle, yeux void</sub></td>
-    <td align="center"><img src="docs/ascii-thinking.png" width="330" alt="Une orbe violette en ASCII portant des lunettes rondes, la monture en caractères brillants"><br><sub>ASCII, thinking, lunettes</sub></td>
-  </tr>
-</table>
-
 lumiases dessine une orbe de matière vivante dans un panneau de terminal,
 pensée pour se placer à côté d'une session Claude Code : sa forme, sa vitesse
 et ses couleurs changent selon ce que fait Claude, grâce aux hooks de Claude
