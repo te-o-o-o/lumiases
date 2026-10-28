@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Check the tag matches the changelog
+        run: |
+          want="${GITHUB_REF_NAME#v}"
+          got="$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | cut -c4-)"
+          [ "$want" = "$got" ] || { echo "tag $want, changelog $got"; exit 1; }
+      - run: go vet ./... && go test ./...
+      - name: Build
+        run: |
+          mkdir dist
+          for t in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64; do
+            os="${t%/*}" arch="${t#*/}" ext=""
+            [ "$os" = windows ] && ext=.exe
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags=-s -o "dist/lumiases-$os-$arch$ext" .
+          done
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          awk '/^## /{n++} n==1' CHANGELOG.md | tail -n +2 > notes.md
+          cat >> notes.md <<'NOTES'
+
+          The binaries are not signed. On macOS, run `xattr -d com.apple.quarantine lumiases` once;
+          on Windows, pick "More info" then "Run anyway" if SmartScreen stops it.
+          Only macOS has been tried so far; Linux and Windows builds are untested.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md
