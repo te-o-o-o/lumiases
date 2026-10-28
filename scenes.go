@@ -295,11 +295,11 @@ func waves(x, y, t, ph float64, p params) (rgb, float64, float64) {
 
 // spectrum is a mirrored row of level bars: quiet when idle, the middle
 // bands pulsing while thinking, chatter while editing and running, a flat
-// line with a blip while waiting, clipping on error, a swell when done.
+// line with a blip while waiting, feedback on error, a swell when done.
 func spectrum(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	m := p.mood
 	s := p.size / 0.8
-	x, y = x/s+p.shake*math.Sin(t*53), y/s
+	x, y = x/s, y/s // no shake: the error is the feedback itself
 	if math.Abs(x) > 1 || math.Abs(y) > 1 {
 		return p.edge, 0, 0.5
 	}
@@ -309,13 +309,22 @@ func spectrum(x, y, t, ph float64, p params) (rgb, float64, float64) {
 	fx := fi - i
 	c := i/(nb-1)*2 - 1
 	b := p.statue.blast
+	// Error is feedback: one band screams at the top and quivers, its
+	// neighbours bleed, the rest are crushed flat. Every 2 s it holds, then
+	// slides over to the next band that feeds back.
+	k := t / 2
+	from, to := hash(int(k), 41)*1.6-0.8, hash(int(k)+1, 41)*1.6-0.8
+	fc := lerp(from, to, smoothstep(0.55, 1, k-math.Floor(k)))
+	fd := math.Abs(c - fc)
+	larsen := math.Max(math.Exp(-sq(fd/0.05))*(0.9+0.08*math.Sin(t*55)), 0.3*math.Exp(-sq(fd/0.2))*(0.8+0.2*math.Sin(t*31))) +
+		0.03 + 0.02*noise(c*8, t*10)
 	lv := m[mIdle]*(0.06+0.08*noise(c*3, ph*0.8)) +
 		m[mThinking]*0.6*math.Exp(-c*c/0.12)*(0.6+0.4*math.Sin(ph*3+c*4)) +
 		m[mReading]*(0.05+0.55*math.Exp(-sq((c-0.8*math.Sin(t*1.2))/0.2))) +
 		m[mEditing]*0.7*math.Pow(noise(c*4, ph*4), 1.5) +
 		m[mRunning]*0.8*math.Pow(noise(c*5, ph*6), 1.2) +
 		m[mWaiting]*(0.02+0.6*math.Exp(-math.Mod(t, 1.6)*6)*math.Exp(-c*c/0.02)) +
-		m[mError]*0.85*math.Floor(hash(int(i), int(t*12))+0.5) +
+		m[mError]*larsen +
 		m[mDone]*0.8*math.Exp(-sq((math.Abs(c)-b)/0.25))*(1-0.7*b)
 	lv *= 0.85
 	ay := math.Abs(y)
