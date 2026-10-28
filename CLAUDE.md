@@ -12,7 +12,7 @@ Decisions and traps in detail: `docs/notes.md`.
 | `main.go` | Flags, keys, the 30 fps loop, terminal size | A state's target is `states` + `stateEyes` + `stateStatue`, eased with `ease`. |
 | `orb.go` | `params`, the 8 `states`, noise, `sample` (the orb), `sparks` | `sample` works in square units, orb about 1 wide; phase `ph`, not time, drives motion. |
 | `eyes.go` | `eyeParams`, `stateEyes`, the five eye shapes | Eyes return carve and glow; they never draw glyphs themselves. |
-| `scenes.go` | `forms`, the swarm and the line scenes (pulsar, scope, field, topo, waves, orbits, flow); `mood`, each state's eased weight | Drawn from code alone, no picture; they keep `sample`'s contract and read the state through `p.mood`. |
+| `scenes.go` | `forms`, the swarm and the line scenes (pulsar, scope, field, topo, waves, spectrum, orbits, flow); `mood`, each state's eased weight | Drawn from code alone, no picture; they keep `sample`'s contract and read the state through `p.mood`. |
 | `statue.go` | `statueParams`, `stateStatue`, photo loading and keying, `sampleFace` | Effects bend where the photo is read, never the photo. |
 | `gif.go` | The intro: GIFs loaded with `image/gif`, composited, shrunk, filtered and shown as kitty-protocol pictures | Shown as they are, never through a style; a frame is sent only when it changes. |
 | `render.go` | `frame`: braille dithering, ASCII glyph matching, the octant table, kitty-protocol images for the intro | One goroutine per row; one write per frame inside synchronized output. |

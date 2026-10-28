@@ -2,7 +2,7 @@
 // Claude Code session and change with what Claude does.
 //
 // Keys: s next style, 1-8 state, h next shape (orb, swarm,
-// pulsar, scope, field, topo, waves, orbits, flow, then the heads), +/- zoom, e eye shape, f eyes on/off, r turn the statue, c cycle
+// pulsar, scope, field, topo, waves, spectrum, orbits, flow, then the heads), +/- zoom, e eye shape, f eyes on/off, r turn the statue, c cycle
 // states, space pause, q quit.
 //
 // `lumiases -follow` takes its state from Claude Code, whose hooks run
